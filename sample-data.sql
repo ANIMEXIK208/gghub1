@@ -1,0 +1,12 @@
+-- Sample data for GGHub (ARCHIVED)
+-- 
+-- IMPORTANT: Do NOT run this file anymore
+-- 
+-- Real user profiles should only be created through the Supabase Authentication system.
+-- The leaderboard will automatically display only ACTUAL users who have:
+--   1. Created an account through the /register page
+--   2. Verified their email
+--   3. Played games that log to the leaderboard
+--
+-- All sample/placeholder data has been deleted from the database.
+-- This file is kept for reference/documentation purposes only.
