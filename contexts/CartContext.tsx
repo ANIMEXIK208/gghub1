@@ -38,7 +38,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useUser();
-  const supabase = useMemo(() => getSupabaseClient(), []);
+  const supabase = getSupabaseClient();
 
   const getCartStorageKey = (userId?: string | number) =>
     userId ? `gghub-cart-user-${userId}` : 'gghub-cart-guest';

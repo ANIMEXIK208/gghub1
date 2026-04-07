@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const supabase = useMemo(() => getSupabaseClient(), []);
+  const supabase = getSupabaseClient();
 
   // Admin password - change this in production
   const ADMIN_PASSWORD = 'admin123';

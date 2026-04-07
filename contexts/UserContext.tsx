@@ -65,7 +65,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [initialized, setInitialized] = useState(false);
-  const supabase = React.useMemo(() => getSupabaseClient(), []);
+  const supabase = getSupabaseClient();
 
   const adminEmails = React.useMemo(() => {
     const raw = process.env.NEXT_PUBLIC_GGHUB_ADMIN_EMAILS || '';
