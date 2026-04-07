@@ -13,7 +13,7 @@ const ensureSupabaseEnv = () => {
   }
 };
 
-export const getSupabaseClient = (): SupabaseClient<any> => {
+export const getSupabaseClient = () => {
   ensureSupabaseEnv();
-  return createSupabaseClient<Database>(supabaseUrl, supabaseKey);
+  return createSupabaseClient<Database, 'public'>(supabaseUrl!, supabaseKey!) as any;
 };

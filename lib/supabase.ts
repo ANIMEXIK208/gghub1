@@ -1,6 +1,9 @@
 import { getSupabaseClient } from '@/utils/supabase/client';
+import type { Database } from '@/types/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-export const getSupabase = () => getSupabaseClient();
+export const getSupabase = () =>
+  getSupabaseClient() as SupabaseClient<Database, 'public', 'public'>;
 
 export const signUp = async (email: string, password: string, displayName: string) => {
   const supabase = getSupabase();
