@@ -1,0 +1,21 @@
+[build]
+  command = "npm run build"
+  functions = "netlify/functions"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production.environment]
+  NEXT_PUBLIC_APP_URL = "https://getgaming.netlify.app"
+
+[context.preview.environment]
+  NEXT_PUBLIC_APP_URL = "https://deploy-preview-*.getgaming.netlify.app"
+
+[context.branch-deploy.environment]
+  NEXT_PUBLIC_APP_URL = "https://*.getgaming.netlify.app"
