@@ -63,7 +63,7 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
       }
 
       if (data) {
-        const formattedAnnouncements: Announcement[] = data.map(item => ({
+        const formattedAnnouncements: Announcement[] = (data as any[]).map(item => ({
           id: item.id,
           title: item.title,
           message: item.description || '',
@@ -153,48 +153,6 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
       addAnnouncement,
       editAnnouncement,
       deleteAnnouncement,
-    }}>
-      {children}
-    </AnnouncementsContext.Provider>
-  );
-};
-      console.error('Error adding announcement:', error);
-    }
-  };
-
-  const editAnnouncement = (id: number, updated: Partial<Announcement>) => {
-    try {
-      const updatedList = announcements.map(item =>
-        item.id === id ? { ...item, ...updated } : item
-      );
-      setAnnouncements(updatedList);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedList));
-      }
-    } catch (error) {
-      console.error('Error updating announcement:', error);
-    }
-  };
-
-  const deleteAnnouncement = (id: number) => {
-    try {
-      const updated = announcements.filter(item => item.id !== id);
-      setAnnouncements(updated);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      }
-    } catch (error) {
-      console.error('Error deleting announcement:', error);
-    }
-  };
-
-  return (
-    <AnnouncementsContext.Provider value={{
-      announcements,
-      loading,
-      addAnnouncement,
-      editAnnouncement,
-      deleteAnnouncement
     }}>
       {children}
     </AnnouncementsContext.Provider>

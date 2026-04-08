@@ -66,7 +66,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
 
       if (data) {
-        const formattedProducts: Product[] = data.map(item => ({
+        const formattedProducts: Product[] = (data as any[]).map(item => ({
           id: item.id,
           name: item.name,
           price: item.price,
@@ -164,95 +164,6 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       editProduct,
       deleteProduct,
     }}>
-      {children}
-    </ProductContext.Provider>
-  );
-};
-    category: 'Accessories',
-  },
-];
-
-export const useProducts = () => {
-  const context = useContext(ProductContext);
-  if (!context) {
-    throw new Error('useProducts must be used within a ProductProvider');
-  }
-  return context;
-};
-
-export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = () => {
-    try {
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          setProducts(JSON.parse(stored));
-        } else {
-          // Initialize with default products
-          setProducts(DEFAULT_PRODUCTS);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_PRODUCTS));
-        }
-      }
-    } catch (error) {
-      console.error('Error loading products:', error);
-      setProducts(DEFAULT_PRODUCTS);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addProduct = (product: Omit<Product, 'id'>) => {
-    try {
-      const id = Math.max(0, ...products.map(p => p.id), 0) + 1;
-      const newProduct: Product = {
-        id,
-        ...product,
-      };
-      const updated = [newProduct, ...products];
-      setProducts(updated);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      }
-    } catch (error) {
-      console.error('Error adding product:', error);
-    }
-  };
-
-  const editProduct = (id: number, updatedProduct: Partial<Product>) => {
-    try {
-      const updated = products.map(p =>
-        p.id === id ? { ...p, ...updatedProduct } : p
-      );
-      setProducts(updated);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      }
-    } catch (error) {
-      console.error('Error updating product:', error);
-    }
-  };
-
-  const deleteProduct = (id: number) => {
-    try {
-      const updated = products.filter(p => p.id !== id);
-      setProducts(updated);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      }
-    } catch (error) {
-      console.error('Error deleting product:', error);
-    }
-  };
-
-  return (
-    <ProductContext.Provider value={{ products, loading, addProduct, editProduct, deleteProduct }}>
       {children}
     </ProductContext.Provider>
   );
