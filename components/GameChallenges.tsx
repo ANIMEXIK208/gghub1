@@ -1,8 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useUser } from '../contexts/UserContext';
 
 const LOOT_PRIZES = [
   { name: 'Rare headset skin', points: 70 },
@@ -48,9 +46,13 @@ const PUZZLE_PATTERNS = [
 ];
 
 export default function GameChallenges() {
-  const { isAuthenticated } = useAuth();
-  const { user, addGameLog } = useUser();
-  const [gameLog, setGameLog] = useState([]);
+  // Since we removed auth, always consider user "authenticated"
+  const isAuthenticated = true;
+  const [gameLog, setGameLog] = useState<string[]>([]);
+
+  const addGameLog = (message: string) => {
+    setGameLog(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
 
   // Rock Paper Scissors Game State
   const [playerChoice, setPlayerChoice] = useState<'rock' | 'paper' | 'scissors' | null>(null);
@@ -113,20 +115,14 @@ export default function GameChallenges() {
 
   // Helper function to save game score to the shared leaderboard and game log
   const saveGameScore = useCallback(async (gameName: string, points: number) => {
-    if (isAuthenticated && user && addGameLog) {
+    if (isAuthenticated && addGameLog) {
       try {
-        await addGameLog({
-          game: gameName,
-          quest: `Complete the ${gameName} challenge`,
-          result: 'completed',
-          points,
-          balanceChange: 0,
-        });
+        addGameLog(`${gameName}: Scored ${points} points`);
       } catch (error) {
         console.error('Failed to save game score:', error);
       }
     }
-  }, [isAuthenticated, user, addGameLog]);
+  }, [isAuthenticated, addGameLog]);
 
   const playRPS = useCallback((choice: 'rock' | 'paper' | 'scissors') => {
     const choices: ('rock' | 'paper' | 'scissors')[] = ['rock', 'paper', 'scissors'];

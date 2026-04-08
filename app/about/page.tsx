@@ -34,12 +34,12 @@ export default function About() {
                 <span>Community challenge progress tracking to help you see achievements.</span>
               </li>
               <li className="flex items-start gap-3">
-                <span className="text-green-400 text-xl mt-1">👥</span>
-                <span>Personalized accounts with profile and purchase history</span>
-              </li>
-              <li className="flex items-start gap-3">
                 <span className="text-green-400 text-xl mt-1">⚡</span>
                 <span>Premium accessories selected for quality and reliability</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-green-400 text-xl mt-1">🛒</span>
+                <span>Simple shopping cart with local storage for convenience</span>
               </li>
             </ul>
           </div>
