@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getSupabaseClient } from '@/utils/supabase/client';
 
 export interface Product {
   id: number;
@@ -16,88 +17,157 @@ export interface Product {
 interface ProductContextType {
   products: Product[];
   loading: boolean;
-  addProduct: (product: Omit<Product, 'id'>) => void;
-  editProduct: (id: number, updatedProduct: Partial<Product>) => void;
-  deleteProduct: (id: number) => void;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
+  editProduct: (id: number, updatedProduct: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: number) => Promise<void>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
-const STORAGE_KEY = 'gghub-products';
 
-const DEFAULT_PRODUCTS: Product[] = [
-  {
-    id: 1,
-    name: 'Premium Gaming Headset',
-    description: 'Reliable surround sound, a clear microphone, and a comfortable fit for long sessions.',
-    price: 12999,
-    image: 'https://images.unsplash.com/photo-1599669454699-248893623440?w=400',
-    rating: 4.8,
-    category: 'Audio',
-    trending: true,
-  },
-  {
-    id: 2,
-    name: 'Professional Mechanical Keyboard',
-    description: 'Responsive mechanical keys with a strong build and clean interface for steady performance.',
-    price: 8999,
-    image: 'https://images.unsplash.com/photo-1541140532154-b024d705b90a?w=400',
-    rating: 4.6,
-    category: 'Peripherals',
-    trending: true,
-  },
-  {
-    id: 3,
-    name: 'High-Precision Gaming Mouse',
-    description: 'Fast tracking with adjustable sensitivity and a stable grip for steady control.',
-    price: 7999,
-    image: 'https://images.unsplash.com/photo-1527814050087-3793815479db?w=400',
-    rating: 4.7,
-    category: 'Peripherals',
-    trending: true,
-  },
-  {
-    id: 4,
-    name: '4K Gaming Monitor',
-    description: '27-inch 4K display with smooth refresh and crisp picture quality for every gaming session.',
-    price: 49999,
-    image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400',
-    rating: 4.9,
-    category: 'Displays',
-  },
-  {
-    id: 5,
-    name: 'Ergonomic Gaming Chair',
-    description: 'Supportive chair with adjustable comfort and a modern design for long use.',
-    price: 29999,
-    image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400',
-    rating: 4.5,
-    category: 'Furniture',
-  },
-  {
-    id: 6,
-    name: 'High-Performance Gaming PC',
-    description: 'Ready-to-use gaming system with strong performance and fast storage.',
-    price: 199999,
-    image: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400',
-    rating: 4.8,
-    category: 'Systems',
-  },
-  {
-    id: 7,
-    name: 'Wireless Controller',
-    description: 'Wireless controller with precise controls and long battery life.',
-    price: 6999,
-    image: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400',
-    rating: 4.4,
-    category: 'Controllers',
-  },
-  {
-    id: 8,
-    name: 'Extended Mouse Pad',
-    description: 'Large surface with a non-slip base and smooth finish for precise movement.',
-    price: 2499,
-    image: 'https://images.unsplash.com/photo-1625842268584-8f3296236761?w=400',
-    rating: 4.3,
+export const useProducts = () => {
+  const context = useContext(ProductContext);
+  if (!context) {
+    throw new Error('useProducts must be used within a ProductProvider');
+  }
+  return context;
+};
+
+export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = getSupabaseClient();
+
+  useEffect(() => {
+    fetchProducts();
+
+    // Set up real-time subscription for live updates
+    const channel = supabase
+      .channel('products_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        fetchProducts();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching products:', error);
+        return;
+      }
+
+      if (data) {
+        const formattedProducts: Product[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          image: item.image_url || '',
+          description: item.description || '',
+          rating: item.rating || 4.5,
+          category: item.category || '',
+          trending: false, // You can add a trending column to the database if needed
+        }));
+        setProducts(formattedProducts);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addProduct = async (product: Omit<Product, 'id'>) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .insert({
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          image_url: product.image,
+          rating: product.rating || 4.5,
+          category: product.category || '',
+        });
+
+      if (error) {
+        console.error('Error adding product:', error);
+        throw error;
+      }
+
+      // fetchProducts will be called automatically via real-time subscription
+    } catch (error) {
+      console.error('Error adding product:', error);
+      throw error;
+    }
+  };
+
+  const editProduct = async (id: number, updatedProduct: Partial<Product>) => {
+    try {
+      const updateData: any = {};
+      if (updatedProduct.name !== undefined) updateData.name = updatedProduct.name;
+      if (updatedProduct.description !== undefined) updateData.description = updatedProduct.description;
+      if (updatedProduct.price !== undefined) updateData.price = updatedProduct.price;
+      if (updatedProduct.image !== undefined) updateData.image_url = updatedProduct.image;
+      if (updatedProduct.rating !== undefined) updateData.rating = updatedProduct.rating;
+      if (updatedProduct.category !== undefined) updateData.category = updatedProduct.category;
+
+      const { error } = await supabase
+        .from('products')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating product:', error);
+        throw error;
+      }
+
+      // fetchProducts will be called automatically via real-time subscription
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw error;
+    }
+  };
+
+  const deleteProduct = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting product:', error);
+        throw error;
+      }
+
+      // fetchProducts will be called automatically via real-time subscription
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <ProductContext.Provider value={{
+      products,
+      loading,
+      addProduct,
+      editProduct,
+      deleteProduct,
+    }}>
+      {children}
+    </ProductContext.Provider>
+  );
+};
     category: 'Accessories',
   },
 ];

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { getSupabaseClient } from '@/utils/supabase/client';
 
 export interface Announcement {
   id: number;
@@ -13,13 +14,12 @@ export interface Announcement {
 interface AnnouncementsContextType {
   announcements: Announcement[];
   loading: boolean;
-  addAnnouncement: (announcement: Omit<Announcement, 'id'>) => void;
-  editAnnouncement: (id: number, updated: Partial<Announcement>) => void;
-  deleteAnnouncement: (id: number) => void;
+  addAnnouncement: (announcement: Omit<Announcement, 'id'>) => Promise<void>;
+  editAnnouncement: (id: number, updated: Partial<Announcement>) => Promise<void>;
+  deleteAnnouncement: (id: number) => Promise<void>;
 }
 
 const AnnouncementsContext = createContext<AnnouncementsContextType | undefined>(undefined);
-const STORAGE_KEY = 'gghub-announcements';
 
 export const useAnnouncements = () => {
   const context = useContext(AnnouncementsContext);
@@ -29,75 +29,135 @@ export const useAnnouncements = () => {
   return context;
 };
 
-// Sample announcements to start with
-const DEFAULT_ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: 1,
-    title: 'Exclusive Gaming Offer',
-    message: 'Explore premium accessories and reliable service for your next order.',
-    emoji: '🎮',
-  },
-  {
-    id: 2,
-    title: 'Service Savings Event',
-    message: 'Save on select accessories with smart pricing and fast delivery.',
-    emoji: '💼',
-  },
-  {
-    id: 3,
-    title: 'Customer Support Update',
-    message: 'Our support team is ready to help with orders and account questions.',
-    emoji: '📞',
-  },
-  {
-    id: 4,
-    title: 'Free Shipping Offer',
-    message: 'Enjoy free shipping on all orders over ₦20,000 this weekend.',
-    emoji: '📦',
-  },
-];
-
 export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const supabase = getSupabaseClient();
 
   useEffect(() => {
     fetchAnnouncements();
+
+    // Set up real-time subscription for live updates
+    const channel = supabase
+      .channel('announcements_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+        fetchAnnouncements();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const fetchAnnouncements = () => {
+  const fetchAnnouncements = async () => {
     try {
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          setAnnouncements(JSON.parse(stored));
-        } else {
-          // Initialize with default announcements
-          setAnnouncements(DEFAULT_ANNOUNCEMENTS);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_ANNOUNCEMENTS));
-        }
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching announcements:', error);
+        return;
+      }
+
+      if (data) {
+        const formattedAnnouncements: Announcement[] = data.map(item => ({
+          id: item.id,
+          title: item.title,
+          message: item.description || '',
+          image: item.image_url || '',
+          emoji: item.emoji || '',
+        }));
+        setAnnouncements(formattedAnnouncements);
       }
     } catch (error) {
-      console.error('Error loading announcements:', error);
-      setAnnouncements(DEFAULT_ANNOUNCEMENTS);
+      console.error('Error fetching announcements:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const addAnnouncement = (announcement: Omit<Announcement, 'id'>) => {
+  const addAnnouncement = async (announcement: Omit<Announcement, 'id'>) => {
     try {
-      const id = Math.max(0, ...announcements.map(a => a.id), 0) + 1;
-      const newAnnouncement: Announcement = {
-        id,
-        ...announcement,
-      };
-      const updated = [newAnnouncement, ...announcements];
-      setAnnouncements(updated);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      const { error } = await supabase
+        .from('announcements')
+        .insert({
+          title: announcement.title,
+          description: announcement.message,
+          image_url: announcement.image || null,
+          emoji: announcement.emoji || null,
+        });
+
+      if (error) {
+        console.error('Error adding announcement:', error);
+        throw error;
       }
+
+      // fetchAnnouncements will be called automatically via real-time subscription
     } catch (error) {
+      console.error('Error adding announcement:', error);
+      throw error;
+    }
+  };
+
+  const editAnnouncement = async (id: number, updated: Partial<Announcement>) => {
+    try {
+      const updateData: any = {};
+      if (updated.title !== undefined) updateData.title = updated.title;
+      if (updated.message !== undefined) updateData.description = updated.message;
+      if (updated.image !== undefined) updateData.image_url = updated.image;
+      if (updated.emoji !== undefined) updateData.emoji = updated.emoji;
+
+      const { error } = await supabase
+        .from('announcements')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating announcement:', error);
+        throw error;
+      }
+
+      // fetchAnnouncements will be called automatically via real-time subscription
+    } catch (error) {
+      console.error('Error updating announcement:', error);
+      throw error;
+    }
+  };
+
+  const deleteAnnouncement = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting announcement:', error);
+        throw error;
+      }
+
+      // fetchAnnouncements will be called automatically via real-time subscription
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <AnnouncementsContext.Provider value={{
+      announcements,
+      loading,
+      addAnnouncement,
+      editAnnouncement,
+      deleteAnnouncement,
+    }}>
+      {children}
+    </AnnouncementsContext.Provider>
+  );
+};
       console.error('Error adding announcement:', error);
     }
   };

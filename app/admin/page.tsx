@@ -65,27 +65,33 @@ export default function AdminPage() {
     return null;
   }
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (editingProduct) {
-      editProduct(editingProduct.id, {
-        name: formData.name,
-        price: parseFloat(formData.price),
-        image: formData.image,
-        description: formData.description,
-        trending: formData.trending,
-      });
-      setEditingProduct(null);
-    } else {
-      addProduct({
-        name: formData.name,
-        price: parseFloat(formData.price),
-        image: formData.image,
-        description: formData.description,
-        trending: formData.trending,
-      });
+    try {
+      if (editingProduct) {
+        await editProduct(editingProduct.id, {
+          name: formData.name,
+          price: parseFloat(formData.price),
+          image: formData.image,
+          description: formData.description,
+          trending: formData.trending,
+        });
+        setEditingProduct(null);
+      } else {
+        await addProduct({
+          name: formData.name,
+          price: parseFloat(formData.price),
+          image: formData.image,
+          description: formData.description,
+          trending: formData.trending,
+        });
+      }
+      setFormData({ name: '', price: '', image: '', description: '', trending: false });
+      setProductImagePreview('');
+    } catch (error) {
+      console.error('Error saving product:', error);
+      // You could add error state here to show to user
     }
-    setFormData({ name: '', price: '', image: '', description: '', trending: false });
   };
 
   const handleEdit = (product: Product) => {
@@ -106,25 +112,29 @@ export default function AdminPage() {
     setProductImagePreview('');
   };
 
-  const handleAnnouncementSubmit = (e: FormEvent) => {
+  const handleAnnouncementSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
-    if (editingAnnouncement) {
-      editAnnouncement(editingAnnouncement.id, {
-        title: announcementForm.title,
-        message: announcementForm.message,
-        image: announcementForm.image || undefined,
-      });
-      setEditingAnnouncement(null);
-    } else {
-      addAnnouncement({
-        title: announcementForm.title,
-        message: announcementForm.message,
-        image: announcementForm.image || undefined,
-      });
+    try {
+      if (editingAnnouncement) {
+        await editAnnouncement(editingAnnouncement.id, {
+          title: announcementForm.title,
+          message: announcementForm.message,
+          image: announcementForm.image || undefined,
+        });
+        setEditingAnnouncement(null);
+      } else {
+        await addAnnouncement({
+          title: announcementForm.title,
+          message: announcementForm.message,
+          image: announcementForm.image || undefined,
+        });
+      }
+      setAnnouncementForm({ title: '', message: '', image: '' });
+      setAnnouncementImagePreview('');
+    } catch (error) {
+      console.error('Error saving announcement:', error);
+      // You could add error state here to show to user
     }
-
-    setAnnouncementForm({ title: '', message: '', image: '' });
   };
 
   const handleEditAnnouncement = (announcement: Announcement) => {
