@@ -29,10 +29,10 @@ const defaultSettings: HomePageSettings = {
   heroPrimaryCta: 'Shop Best Sellers',
   heroSecondaryCta: 'Explore Challenges',
   trendingTag: 'Trending Product',
-  trendingTitle: 'GGHub Elite Controller Set',
-  trendingDescription: 'A complete professional-grade controller kit built for precision, comfort, and style.',
-  trendingPrice: '₦12,499',
-  trendingImage: 'https://images.unsplash.com/photo-1606813901964-ccf69434d053?auto=format&fit=crop&w=900&q=80',
+  trendingTitle: 'Thumb Sleeves For Gaming',
+  trendingDescription: 'Breathable, sweat-proof gaming sleeves with silvery fiber material. Improves touch sensitivity for mobile gaming. Size 4.6cm × 2.5cm.',
+  trendingPrice: '₦3,000',
+  trendingImage: 'https://images.unsplash.com/photo-1611532736579-6b16e2b50449?w=400&q=80',
 };
 
 export const useHomePage = () => {
