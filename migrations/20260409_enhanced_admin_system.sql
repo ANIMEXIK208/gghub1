@@ -218,11 +218,13 @@ ON CONFLICT (name) DO NOTHING;
 -- ============================================================
 -- 13. ENABLE REALTIME FOR UPDATED TABLES
 -- ============================================================
-ALTER PUBLICATION supabase_realtime ADD TABLE admin_users;
-ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
-ALTER PUBLICATION supabase_realtime ADD TABLE analytics;
-ALTER PUBLICATION supabase_realtime ADD TABLE theme_customization;
-ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;
+-- Note: These tables are typically auto-enabled for realtime by Supabase
+-- Uncomment if needed, but may error on second run if already enabled:
+-- ALTER PUBLICATION supabase_realtime ADD TABLE admin_users;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE analytics;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE theme_customization;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;
 
 -- ============================================================
 -- 14. CREATE HELPER FUNCTIONS
@@ -338,3 +340,11 @@ CREATE POLICY "Admins can view audit logs" ON audit_logs
       SELECT id FROM admin_users WHERE status = 'active'
     )
   );
+
+-- ============================================================
+-- 16. UPDATE THUMB SLEEVES PRODUCT IMAGE
+-- ============================================================
+UPDATE products 
+SET image_url = 'https://cdn.phototourl.com/free/2026-04-09-cefef722-9997-4df7-b187-ec3ac9d22fcb.jpg',
+    updated_at = CURRENT_TIMESTAMP
+WHERE name = 'Thumb Sleeves';
