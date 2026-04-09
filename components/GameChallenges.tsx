@@ -50,9 +50,9 @@ export default function GameChallenges() {
   const isAuthenticated = true;
   const [gameLog, setGameLog] = useState<string[]>([]);
 
-  const addGameLog = (message: string) => {
+  const addGameLog = useCallback((message: string) => {
     setGameLog(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
-  };
+  }, []);
 
   // Rock Paper Scissors Game State
   const [playerChoice, setPlayerChoice] = useState<'rock' | 'paper' | 'scissors' | null>(null);
