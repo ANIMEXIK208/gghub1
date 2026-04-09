@@ -345,6 +345,5 @@ CREATE POLICY "Admins can view audit logs" ON audit_logs
 -- 16. UPDATE THUMB SLEEVES PRODUCT IMAGE
 -- ============================================================
 UPDATE products 
-SET image_url = 'https://cdn.phototourl.com/free/2026-04-09-cefef722-9997-4df7-b187-ec3ac9d22fcb.jpg',
-    updated_at = CURRENT_TIMESTAMP
+SET image_url = 'https://cdn.phototourl.com/free/2026-04-09-cefef722-9997-4df7-b187-ec3ac9d22fcb.jpg'
 WHERE name = 'Thumb Sleeves';
