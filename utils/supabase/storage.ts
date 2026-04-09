@@ -1,4 +1,5 @@
 import { getSupabaseClient } from './client';
+import type { StorageBucket } from '@supabase/supabase-js';
 
 const PRODUCT_IMAGES_BUCKET = 'product-images';
 const ANNOUNCEMENT_IMAGES_BUCKET = 'announcement-images';
@@ -94,7 +95,7 @@ export const ensureBucketsExist = async (): Promise<void> => {
     for (const bucket of buckets) {
       // Check if bucket exists
       const { data: existingBuckets } = await supabase.storage.listBuckets();
-      const bucketExists = existingBuckets?.some((b) => b.name === bucket.name);
+      const bucketExists = existingBuckets?.some((b: StorageBucket) => b.name === bucket.name);
 
       if (!bucketExists) {
         // Create bucket
