@@ -8,6 +8,7 @@ export interface Product {
   name: string;
   price: number;
   image: string;
+  images?: string[];
   description: string;
   rating?: number;
   category?: string;
@@ -66,16 +67,24 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
 
       if (data) {
-        const formattedProducts: Product[] = (data as any[]).map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          image: item.image_url || '',
-          description: item.description || '',
-          rating: item.rating || 4.5,
-          category: item.category || '',
-          trending: false, // You can add a trending column to the database if needed
-        }));
+        const formattedProducts: Product[] = (data as any[]).map(item => {
+          // Use image_urls array if available, otherwise fall back to single image_url
+          const imageArray = item.image_urls && item.image_urls.length > 0 
+            ? item.image_urls 
+            : (item.image_url ? [item.image_url] : []);
+
+          return {
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            image: imageArray[0] || '',
+            images: imageArray,
+            description: item.description || '',
+            rating: item.rating || 4.5,
+            category: item.category || '',
+            trending: false,
+          };
+        });
         setProducts(formattedProducts);
       }
     } catch (error) {
@@ -87,6 +96,10 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
+      const imageArray = product.images && product.images.length > 0 
+        ? product.images 
+        : (product.image ? [product.image] : []);
+
       const { error } = await supabase
         .from('products')
         .insert({
@@ -94,6 +107,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
           description: product.description,
           price: product.price,
           image_url: product.image,
+          image_urls: imageArray,
           rating: product.rating || 4.5,
           category: product.category || '',
         });
@@ -117,6 +131,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (updatedProduct.description !== undefined) updateData.description = updatedProduct.description;
       if (updatedProduct.price !== undefined) updateData.price = updatedProduct.price;
       if (updatedProduct.image !== undefined) updateData.image_url = updatedProduct.image;
+      if (updatedProduct.images !== undefined) updateData.image_urls = updatedProduct.images;
       if (updatedProduct.rating !== undefined) updateData.rating = updatedProduct.rating;
       if (updatedProduct.category !== undefined) updateData.category = updatedProduct.category;
 

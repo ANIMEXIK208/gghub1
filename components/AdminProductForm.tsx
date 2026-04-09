@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProducts, Product } from '@/contexts/ProductContext';
 import { uploadProductImage } from '@/utils/supabase/storage';
+import { compressImage, getCompressionStats } from '@/utils/imageCompression';
 import Image from 'next/image';
 
 interface ProductFormProps {
@@ -21,6 +22,12 @@ export default function ProductForm({
   const [imageUploading, setImageUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [compressionStats, setCompressionStats] = useState<{
+    reduction: string;
+    originalMB: string;
+    compressedMB: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     name: product?.name || '',
@@ -28,6 +35,7 @@ export default function ProductForm({
     price: product?.price || 0,
     category: product?.category || 'Accessories',
     image: product?.image || '',
+    images: product?.images || (product?.image ? [product.image] : []),
     rating: product?.rating || 4.5,
     trending: product?.trending || false,
   });
@@ -53,30 +61,84 @@ export default function ProductForm({
 
     setImageUploading(true);
     setError('');
+    setCompressionStats(null);
 
     try {
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error('Image size must be less than 5MB');
-      }
-
       // Validate file type
       if (!file.type.startsWith('image/')) {
         throw new Error('File must be an image');
       }
 
+      // Store original size for stats
+      const originalSize = file.size;
+      
+      // Compress image
+      const compressedBlob = await compressImage(file, 'PRODUCT');
+      const compressedFile = new File([compressedBlob], file.name, { type: 'image/jpeg' });
+
+      // Get compression stats
+      const stats = getCompressionStats(originalSize, compressedBlob.size);
+      setCompressionStats(stats);
+
+      // Upload compressed image
       const imageUrl = await uploadProductImage(file);
-      setFormData(prev => ({
-        ...prev,
-        image: imageUrl,
-      }));
-      setPreviewImage(imageUrl);
-      setSuccess('✅ Image uploaded successfully');
-      setTimeout(() => setSuccess(''), 3000);
+      addImageToList(imageUrl);
+      
+      setSuccess(`✅ Image uploaded successfully (${stats.reduction}% reduced)`);
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
       setError(`❌ Image upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setImageUploading(false);
+    }
+  };
+
+  const addImageToList = (url: string) => {
+    const updatedImages = [...formData.images, url];
+    setFormData(prev => ({
+      ...prev,
+      images: updatedImages,
+      image: updatedImages[0], // Set first image as primary
+    }));
+    setPreviewImage(url);
+  };
+
+  const addManualImageUrl = () => {
+    if (!newImageUrl.trim()) {
+      setError('Please enter a valid image URL');
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(newImageUrl);
+    } catch {
+      setError('Please enter a valid image URL');
+      return;
+    }
+
+    if (formData.images.includes(newImageUrl)) {
+      setError('This image URL is already added');
+      return;
+    }
+
+    addImageToList(newImageUrl);
+    setNewImageUrl('');
+    setError('');
+    setSuccess('✅ Image URL added successfully');
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  const removeImage = (index: number) => {
+    const updatedImages = formData.images.filter((_, i) => i !== index);
+    setFormData(prev => ({
+      ...prev,
+      images: updatedImages,
+      image: updatedImages[0] || '', // Update primary image
+    }));
+
+    if (formData.images[index] === previewImage && updatedImages.length > 0) {
+      setPreviewImage(updatedImages[0]);
     }
   };
 
@@ -96,8 +158,8 @@ export default function ProductForm({
       if (formData.price <= 0) {
         throw new Error('Price must be greater than 0');
       }
-      if (!formData.image) {
-        throw new Error('Product image is required');
+      if (formData.images.length === 0) {
+        throw new Error('At least one product image is required');
       }
 
       const productData = {
@@ -105,7 +167,8 @@ export default function ProductForm({
         description: formData.description,
         price: formData.price,
         category: formData.category,
-        image: formData.image,
+        image: formData.images[0],
+        images: formData.images,
         rating: formData.rating,
         trending: formData.trending,
       };
@@ -223,34 +286,120 @@ export default function ProductForm({
           </select>
         </div>
 
-        {/* Image Upload */}
-        <div>
-          <label className="block text-green-300 font-semibold mb-2">Product Image</label>
-          <div className="border-2 border-dashed border-green-600/30 rounded-lg p-6 text-center hover:border-green-600/50 transition-colors">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              disabled={imageUploading}
-              className="hidden"
-              id="image-upload"
-            />
-            <label htmlFor="image-upload" className="cursor-pointer">
-              {imageUploading ? (
-                <div className="text-green-300">📤 Uploading...</div>
-              ) : (
-                <div>
-                  <div className="text-4xl mb-2">📸</div>
-                  <p className="text-green-300 font-semibold">Click to upload or drag and drop</p>
-                  <p className="text-green-200/70 text-sm">PNG, JPG, GIF up to 5MB</p>
-                </div>
-              )}
-            </label>
+        {/* Multi-Image Upload */}
+        <div className="border border-green-600/30 rounded-lg p-6 bg-slate-800/50">
+          <label className="block text-green-300 font-semibold mb-4">📸 Product Images (Multiple Supported)</label>
+
+          {/* File Upload */}
+          <div className="mb-4">
+            <div className="border-2 border-dashed border-green-600/30 rounded-lg p-6 text-center hover:border-green-600/50 transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={imageUploading}
+                className="hidden"
+                id="image-upload"
+              />
+              <label htmlFor="image-upload" className="cursor-pointer block">
+                {imageUploading ? (
+                  <div className="text-green-300">📤 Uploading...</div>
+                ) : (
+                  <div>
+                    <div className="text-4xl mb-2">📤</div>
+                    <p className="text-green-300 font-semibold">Click to upload image</p>
+                    <p className="text-green-200/70 text-sm">PNG, JPG, GIF up to 5MB</p>
+                  </div>
+                )}
+              </label>
+            </div>
           </div>
 
+          {/* Compression Stats */}
+          {compressionStats && (
+            <div className="mb-4 p-3 bg-green-600/20 border border-green-600/50 rounded-lg text-sm">
+              <p className="text-green-300 font-semibold mb-2">✅ Image Compressed</p>
+              <div className="space-y-1 text-green-200">
+                <div className="flex justify-between">
+                  <span>Original size:</span>
+                  <span className="font-mono">{compressionStats.originalMB} MB</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Compressed size:</span>
+                  <span className="font-mono">{compressionStats.compressedMB} MB</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Reduction:</span>
+                  <span className="font-mono font-bold text-green-300">{compressionStats.reduction}%</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* OR Divider */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 border-t border-green-600/30"></div>
+            <span className="text-green-600/60 text-sm">OR</span>
+            <div className="flex-1 border-t border-green-600/30"></div>
+          </div>
+
+          {/* Manual URL Input */}
+          <div className="flex gap-2 mb-4">
+            <input
+              type="url"
+              value={newImageUrl}
+              onChange={(e) => setNewImageUrl(e.target.value)}
+              placeholder="https://example.com/image.jpg"
+              className="flex-1 px-4 py-2 bg-slate-800 border border-green-600/30 rounded-lg text-green-100 placeholder-green-500/50 focus:border-green-500 focus:outline-none transition-colors"
+            />
+            <button
+              type="button"
+              onClick={addManualImageUrl}
+              className="px-4 py-2 bg-green-600 text-black font-semibold rounded-lg hover:bg-green-500 transition-colors"
+            >
+              Add URL
+            </button>
+          </div>
+
+          {/* Images List */}
+          {formData.images.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-green-300 font-semibold text-sm">Added Images ({formData.images.length})</p>
+              <div className="grid grid-cols-3 gap-3">
+                {formData.images.map((img, idx) => (
+                  <div key={idx} className="relative group">
+                    <Image
+                      src={img}
+                      alt={`Product image ${idx + 1}`}
+                      width={100}
+                      height={100}
+                      className="w-full h-24 object-cover rounded-lg border border-green-600/30"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 rounded-lg flex items-center justify-center transition-all">
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="text-red-400 hover:text-red-300 font-bold text-lg"
+                        title="Remove image"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {idx === 0 && (
+                      <div className="absolute top-1 left-1 bg-green-600 text-black text-xs font-bold px-2 py-1 rounded">
+                        Primary
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Preview */}
           {previewImage && (
             <div className="mt-4">
-              <p className="text-green-300 font-semibold mb-2">Preview:</p>
+              <p className="text-green-300 font-semibold mb-2 text-sm">Preview:</p>
               <Image
                 src={previewImage}
                 alt="Preview"

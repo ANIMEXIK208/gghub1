@@ -1,4 +1,5 @@
 import { getSupabaseClient } from './client';
+import { compressImage } from '../imageCompression';
 
 type SupabaseBucket = { name: string };
 
@@ -48,10 +49,20 @@ export const uploadFile = async (
 };
 
 /**
- * Upload product image
+ * Upload product image with automatic compression
  */
 export const uploadProductImage = async (file: File): Promise<string> => {
-  return uploadFile(file, PRODUCT_IMAGES_BUCKET, 'products');
+  try {
+    // Compress image first
+    const compressedBlob = await compressImage(file, 'PRODUCT');
+    const compressedFile = new File([compressedBlob], file.name, { type: 'image/jpeg' });
+    
+    return uploadFile(compressedFile, PRODUCT_IMAGES_BUCKET, 'products');
+  } catch (error) {
+    console.error('Error compressing product image:', error);
+    // Fallback: upload original if compression fails
+    return uploadFile(file, PRODUCT_IMAGES_BUCKET, 'products');
+  }
 };
 
 /**
