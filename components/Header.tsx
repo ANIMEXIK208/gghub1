@@ -1,14 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '../contexts/CartContext';
 import CartPanel from './CartPanel';
+import { getSupabaseClient } from '@/utils/supabase/client';
 
 export default function Header() {
   const { cartCount } = useCart();
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const supabase = getSupabaseClient();
+        const { data: sessionData } = await supabase.auth.getSession();
+        
+        if (sessionData.session?.user?.id) {
+          const { data: adminUser } = await supabase
+            .from('admin_users')
+            .select('id')
+            .eq('id', sessionData.session.user.id)
+            .eq('status', 'active')
+            .single();
+          
+          setIsAdmin(!!adminUser);
+        }
+      } catch (err) {
+        console.error('Error checking admin status:', err);
+        setIsAdmin(false);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+
+    checkAdmin();
+  }, []);
 
   return (
     <>
@@ -73,6 +103,17 @@ export default function Header() {
                 )}
               </button>
 
+              {/* Admin Panel Button */}
+              {!adminLoading && isAdmin && (
+                <Link
+                  href="/admin"
+                  className="bg-purple-600 text-white px-4 py-2 rounded-full font-semibold hover:bg-purple-700 transition-colors hidden md:inline-block"
+                  title="Go to Admin Panel"
+                >
+                  👨‍💼 Admin
+                </Link>
+              )}
+
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -108,6 +149,15 @@ export default function Header() {
                 <Link href="/contact" className="text-green-300 hover:text-white transition-colors font-medium py-2">
                   Contact
                 </Link>
+                {!adminLoading && isAdmin && (
+                  <>
+                    <div className="border-t border-green-800 pt-3 mt-3">
+                      <Link href="/admin" className="text-purple-300 hover:text-purple-200 transition-colors font-medium py-2 block">
+                        👨‍💼 Admin Panel
+                      </Link>
+                    </div>
+                  </>
+                )}
               </nav>
             </div>
           )}
