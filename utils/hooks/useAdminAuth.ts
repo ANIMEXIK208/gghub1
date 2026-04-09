@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/utils/supabase/client';
-import type { User, AuthChangeEvent } from '@supabase/supabase-js';
+import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 export const useAdminAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -39,7 +39,7 @@ export const useAdminAuth = () => {
     // Subscribe to auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChanged(async (event: AuthChangeEvent, session) => {
+    } = supabase.auth.onAuthStateChanged(async (event: AuthChangeEvent, session: Session | null) => {
       if (session?.user) {
         setUser(session.user);
         const adminEmails = process.env.NEXT_PUBLIC_GGHUB_ADMIN_EMAILS?.split(',') || [];
