@@ -25,17 +25,6 @@ CREATE TABLE IF NOT EXISTS roles (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins can view all roles" ON roles
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM admin_users 
-      WHERE admin_users.id = auth.uid() 
-      AND admin_users.status = 'active'
-    )
-  );
-
 -- ============================================================
 -- 2. ADMIN_USERS TABLE
 -- ============================================================
@@ -56,25 +45,6 @@ CREATE TABLE IF NOT EXISTS admin_users (
 CREATE INDEX idx_admin_users_email ON admin_users(email);
 CREATE INDEX idx_admin_users_role_id ON admin_users(role_id);
 CREATE INDEX idx_admin_users_status ON admin_users(status);
-
-ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins can view all admin users" ON admin_users
-  FOR SELECT USING (
-    auth.uid() IN (
-      SELECT id FROM admin_users WHERE status = 'active'
-    )
-  );
-
-CREATE POLICY "Users can view their own admin profile" ON admin_users
-  FOR SELECT USING (auth.uid() = id);
-
-CREATE POLICY "Admins can update admin users" ON admin_users
-  FOR UPDATE USING (
-    auth.uid() IN (
-      SELECT id FROM admin_users WHERE status = 'active'
-    )
-  );
 
 -- ============================================================
 -- 3. PERMISSIONS TABLE
@@ -116,15 +86,6 @@ CREATE INDEX idx_analytics_created_at ON analytics(created_at);
 CREATE INDEX idx_analytics_event_type ON analytics(event_type);
 CREATE INDEX idx_analytics_user_id ON analytics(user_id);
 
-ALTER TABLE analytics ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins can view analytics" ON analytics
-  FOR SELECT USING (
-    auth.uid() IN (
-      SELECT id FROM admin_users WHERE status = 'active'
-    )
-  );
-
 -- ============================================================
 -- 6. NOTIFICATION_TEMPLATES TABLE
 -- ============================================================
@@ -165,18 +126,6 @@ CREATE INDEX idx_notifications_status ON notifications(status);
 CREATE INDEX idx_notifications_created_at ON notifications(created_at);
 CREATE INDEX idx_notifications_created_by ON notifications(created_by);
 
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins can view all notifications" ON notifications
-  FOR SELECT USING (
-    auth.uid() IN (
-      SELECT id FROM admin_users WHERE status = 'active'
-    )
-  );
-
-CREATE POLICY "Admins can create notifications" ON notifications
-  FOR INSERT WITH CHECK (auth.uid() = created_by);
-
 -- ============================================================
 -- 8. THEME_CUSTOMIZATION TABLE
 -- ============================================================
@@ -197,14 +146,6 @@ CREATE TABLE IF NOT EXISTS theme_customization (
 
 CREATE INDEX idx_theme_customization_admin_id ON theme_customization(admin_id);
 
-ALTER TABLE theme_customization ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view theme customization" ON theme_customization
-  FOR SELECT USING (auth.uid() = admin_id OR is_active = TRUE);
-
-CREATE POLICY "Users can update their own theme" ON theme_customization
-  FOR UPDATE USING (auth.uid() = admin_id);
-
 -- ============================================================
 -- 9. AUDIT_LOGS TABLE
 -- ============================================================
@@ -223,15 +164,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 CREATE INDEX idx_audit_logs_admin_id ON audit_logs(admin_id);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action);
-
-ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins can view audit logs" ON audit_logs
-  FOR SELECT USING (
-    auth.uid() IN (
-      SELECT id FROM admin_users WHERE status = 'active'
-    )
-  );
 
 -- ============================================================
 -- 10. OFFLINE_SYNC_QUEUE TABLE
@@ -334,5 +266,75 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================================
--- END OF MIGRATION
+-- 15. ENABLE ROW LEVEL SECURITY AND CREATE POLICIES
 -- ============================================================
+
+-- Enable RLS on all tables
+ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analytics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE theme_customization ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- Roles policies
+CREATE POLICY "Admins can view all roles" ON roles
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM admin_users 
+      WHERE admin_users.id = auth.uid() 
+      AND admin_users.status = 'active'
+    )
+  );
+
+-- Admin users policies
+CREATE POLICY "Admins can view all admin users" ON admin_users
+  FOR SELECT USING (
+    auth.uid() IN (
+      SELECT id FROM admin_users WHERE status = 'active'
+    )
+  );
+
+CREATE POLICY "Users can view their own admin profile" ON admin_users
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Admins can update admin users" ON admin_users
+  FOR UPDATE USING (
+    auth.uid() IN (
+      SELECT id FROM admin_users WHERE status = 'active'
+    )
+  );
+
+-- Analytics policies
+CREATE POLICY "Admins can view analytics" ON analytics
+  FOR SELECT USING (
+    auth.uid() IN (
+      SELECT id FROM admin_users WHERE status = 'active'
+    )
+  );
+
+-- Notifications policies
+CREATE POLICY "Admins can view all notifications" ON notifications
+  FOR SELECT USING (
+    auth.uid() IN (
+      SELECT id FROM admin_users WHERE status = 'active'
+    )
+  );
+
+CREATE POLICY "Admins can create notifications" ON notifications
+  FOR INSERT WITH CHECK (auth.uid() = created_by);
+
+-- Theme customization policies (these don't reference admin_users, so they're safe)
+CREATE POLICY "Users can view theme customization" ON theme_customization
+  FOR SELECT USING (auth.uid() = admin_id OR is_active = TRUE);
+
+CREATE POLICY "Users can update their own theme" ON theme_customization
+  FOR UPDATE USING (auth.uid() = admin_id);
+
+-- Audit logs policies
+CREATE POLICY "Admins can view audit logs" ON audit_logs
+  FOR SELECT USING (
+    auth.uid() IN (
+      SELECT id FROM admin_users WHERE status = 'active'
+    )
+  );
