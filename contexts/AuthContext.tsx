@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from '@/utils/supabase/client';
-import type { User, Session } from '@supabase/supabase-js';
+import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
@@ -36,7 +36,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const supabase = getSupabaseClient();
 
-    // Get initial session
     const getInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -49,8 +48,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
+    const { data: authListener } = supabase.auth.onAuthStateChange((_: AuthChangeEvent, session: Session | null) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
     getInitialSession();
-  }, [router]);
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
 
   const signInWithGoogle = async () => {
     try {
@@ -59,7 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${redirectBase}/account`,
+          redirectTo: `${redirectBase}/auth/callback`,
         },
       });
 
