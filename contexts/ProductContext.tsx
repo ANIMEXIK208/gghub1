@@ -40,18 +40,6 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   useEffect(() => {
     fetchProducts();
-
-    // Set up real-time subscription for live updates
-    const channel = supabase
-      .channel('products_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
-        fetchProducts();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const fetchProducts = async () => {

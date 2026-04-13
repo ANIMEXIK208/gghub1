@@ -106,18 +106,6 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   useEffect(() => {
     fetchTheme();
-
-    // Real-time subscription
-    const channel = supabase
-      .channel('theme_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'theme_customization' }, () => {
-        fetchTheme();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [fetchTheme, supabase]);
 
   const updateTheme = useCallback(

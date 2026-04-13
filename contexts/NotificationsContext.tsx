@@ -89,18 +89,6 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   useEffect(() => {
     fetchNotifications();
-
-    // Real-time subscription
-    const channel = supabase
-      .channel('notifications_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
-        fetchNotifications();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [fetchNotifications, supabase]);
 
   const sendNotification = useCallback(

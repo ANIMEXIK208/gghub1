@@ -151,22 +151,6 @@ export const AnalyticsProvider: React.FC<{ children: ReactNode }> = ({
 
   useEffect(() => {
     getDashboardMetrics('today');
-
-    // Real-time subscription
-    const channel = supabase
-      .channel('analytics_changes')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'analytics' },
-        () => {
-          getDashboardMetrics('today');
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [getDashboardMetrics, supabase]);
 
   const trackEvent = useCallback(

@@ -36,18 +36,6 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   useEffect(() => {
     fetchAnnouncements();
-
-    // Set up real-time subscription for live updates
-    const channel = supabase
-      .channel('announcements_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
-        fetchAnnouncements();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const fetchAnnouncements = async () => {

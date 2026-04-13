@@ -12,8 +12,8 @@ export default function AuthCallback() {
       try {
         const supabase = getSupabaseClient();
 
-        // Handle the auth callback
-        const { data, error } = await supabase.auth.getSession();
+        // Handle the OAuth callback and persist the session
+        const { data, error } = await supabase.auth.getSessionFromUrl();
 
         if (error) {
           console.error('Auth callback error:', error);
@@ -22,10 +22,8 @@ export default function AuthCallback() {
         }
 
         if (data.session) {
-          // User is authenticated, redirect to account page
           router.push('/account');
         } else {
-          // No session, redirect to home
           router.push('/');
         }
       } catch (error) {

@@ -112,22 +112,6 @@ export const AdminUsersProvider: React.FC<{ children: ReactNode }> = ({ children
 
   useEffect(() => {
     fetchUsersAndRoles();
-
-    // Real-time subscription for admin users
-    const channel = supabase
-      .channel('admin_users_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'admin_users' },
-        () => {
-          fetchUsersAndRoles();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [fetchUsersAndRoles, supabase]);
 
   const addUser = useCallback(
