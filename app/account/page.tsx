@@ -253,10 +253,15 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
-          <p className="text-green-400 text-lg">Loading profile...</p>
+      <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-black flex items-center justify-center">
+        <div className="text-center animate-pulse">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green-400 border-t-transparent mx-auto mb-6 shadow-lg shadow-green-400/30"></div>
+          <p className="text-green-400 text-xl font-semibold animate-bounce">Loading your gaming profile...</p>
+          <div className="mt-4 flex justify-center space-x-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-ping" style={{animationDelay: '0.1s'}}></div>
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-ping" style={{animationDelay: '0.2s'}}></div>
+          </div>
         </div>
       </div>
     );
@@ -279,15 +284,29 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-green-100">
-      <div className="container mx-auto px-4 py-8 animate-fade-in">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-slate-900 rounded-lg p-8 border border-green-600 shadow-2xl shadow-green-500/20 animate-card-glow">
+    <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-black text-green-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Animated background elements */}
+          <div className="fixed inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-20 left-10 w-32 h-32 bg-green-500/10 rounded-full blur-xl animate-float"></div>
+            <div className="absolute top-40 right-20 w-24 h-24 bg-blue-500/10 rounded-full blur-xl animate-float-delayed"></div>
+            <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-purple-500/10 rounded-full blur-xl animate-float"></div>
+          </div>
+
+          <div className="relative bg-slate-900/90 backdrop-blur-sm rounded-xl p-8 border border-green-600/50 shadow-2xl shadow-green-500/20 animate-fade-in-up">
             <div className="flex items-center justify-between mb-8">
-              <h1 className="text-3xl font-bold text-green-400">My Profile</h1>
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center animate-pulse">
+                  <span className="text-2xl">🎮</span>
+                </div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent animate-slide-in-left">
+                  My Gaming Profile
+                </h1>
+              </div>
               <button
                 onClick={handleSignOut}
-                className="bg-red-600 text-white px-4 py-2 rounded-full font-semibold hover:bg-red-700 transition-colors"
+                className="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-full font-semibold hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-red-500/30"
               >
                 Sign Out
               </button>
@@ -324,33 +343,41 @@ export default function AccountPage() {
                 </div>
 
                 {editing ? (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-green-400 mb-2">Display Name</label>
+                  <div className="space-y-6 animate-fade-in-up">
+                    <div className="space-y-2">
+                      <label className="block text-green-400 font-semibold mb-2 animate-slide-in-left">Display Name</label>
                       <input
                         type="text"
                         value={formData.display_name}
                         onChange={(e) => setFormData(prev => ({ ...prev, display_name: e.target.value }))}
-                        className="w-full bg-slate-800 border border-green-600 rounded px-3 py-2 text-green-100 focus:border-green-400 focus:outline-none"
+                        className="w-full bg-slate-800 border border-green-600 rounded-lg px-4 py-3 text-green-100 focus:border-green-400 focus:ring-2 focus:ring-green-500/25 focus:outline-none transition-all duration-300 hover:border-green-500"
+                        placeholder="Enter your display name"
                       />
                     </div>
-                    <div>
-                      <label className="block text-green-400 mb-2">Bio</label>
+                    <div className="space-y-2">
+                      <label className="block text-green-400 font-semibold mb-2 animate-slide-in-left" style={{animationDelay: '0.1s'}}>Bio</label>
                       <textarea
                         value={formData.bio}
                         onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                        rows={3}
-                        className="w-full bg-slate-800 border border-green-600 rounded px-3 py-2 text-green-100 focus:border-green-400 focus:outline-none"
+                        rows={4}
+                        className="w-full bg-slate-800 border border-green-600 rounded-lg px-4 py-3 text-green-100 focus:border-green-400 focus:ring-2 focus:ring-green-500/25 focus:outline-none transition-all duration-300 hover:border-green-500 resize-none"
                         placeholder="Tell us about yourself..."
                       />
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-4 pt-4">
                       <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="bg-green-600 text-black px-4 py-2 rounded font-semibold hover:bg-green-500 disabled:opacity-50"
+                        className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-full font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {saving ? 'Saving...' : 'Save Changes'}
+                        {saving ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>Saving...</span>
+                          </div>
+                        ) : (
+                          'Save Changes'
+                        )}
                       </button>
                       <button
                         onClick={() => {
@@ -362,22 +389,26 @@ export default function AccountPage() {
                             bio: profile.bio || '',
                           });
                         }}
-                        className="bg-slate-600 text-white px-4 py-2 rounded font-semibold hover:bg-slate-700"
+                        className="border-2 border-green-600 text-green-400 px-8 py-3 rounded-full font-semibold hover:bg-green-600 hover:text-black transition-all duration-300 transform hover:scale-105"
                       >
                         Cancel
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div>
-                    <h3 className="text-lg font-semibold text-green-300 mb-2">{profile.display_name}</h3>
-                    {profile.bio && <p className="text-green-400 mb-4">{profile.bio}</p>}
-                    <button
-                      onClick={() => setEditing(true)}
-                      className="bg-green-600 text-black px-4 py-2 rounded-full font-semibold hover:bg-green-500 transition-colors"
-                    >
-                      Edit Profile
-                    </button>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-green-300">{profile.display_name}</h3>
+                        <p className="text-green-500 mt-1">{profile.bio || 'No bio yet'}</p>
+                      </div>
+                      <button
+                        onClick={() => setEditing(true)}
+                        className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2 rounded-full font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-500/30"
+                      >
+                        Edit Profile
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
