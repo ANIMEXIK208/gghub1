@@ -60,6 +60,29 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 4. Deploy!
 
+### Deploy on Netlify
+
+For Netlify deployment with redeploy functionality:
+
+1. Push your code to GitHub
+2. Connect your GitHub repo to Netlify
+3. Add your environment variables in Netlify dashboard:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. **Set up Build Hook for Redeploy Button:**
+   - Go to Site Settings → Build & Deploy → Build Hooks
+   - Create a new build hook (name it "Redeploy")
+   - Copy the build hook URL
+   - Add it to your environment variables: `NEXT_PUBLIC_NETLIFY_BUILD_HOOK_URL`
+5. Deploy!
+
+### Redeploy Button
+
+Admins can trigger site redeploys directly from the admin dashboard:
+- Go to `/admin` when logged in as admin
+- Click the "🚀 Redeploy Site" button in Quick Actions
+- The button calls your hosting platform's build hook to trigger a new deployment
+
 ### Deploy on Other Platforms
 
 For other hosting platforms, make sure to:

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useProducts } from '@/contexts/ProductContext';
 import { useAnnouncements } from '@/contexts/AnnouncementsContext';
@@ -8,6 +8,41 @@ import { useAnnouncements } from '@/contexts/AnnouncementsContext';
 export default function AdminDashboard() {
   const { products, loading: productsLoading } = useProducts();
   const { announcements, loading: announcementsLoading } = useAnnouncements();
+  const [redeploying, setRedeploying] = useState(false);
+  const [redeployMessage, setRedeployMessage] = useState('');
+
+  const handleRedeploy = async () => {
+    setRedeploying(true);
+    setRedeployMessage('');
+
+    try {
+      const buildHookUrl = process.env.NEXT_PUBLIC_NETLIFY_BUILD_HOOK_URL;
+
+      if (!buildHookUrl) {
+        setRedeployMessage('Build hook URL not configured');
+        return;
+      }
+
+      const response = await fetch(buildHookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        setRedeployMessage('✅ Redeploy triggered successfully!');
+      } else {
+        setRedeployMessage('❌ Failed to trigger redeploy');
+      }
+    } catch (error) {
+      console.error('Redeploy error:', error);
+      setRedeployMessage('❌ Error triggering redeploy');
+    } finally {
+      setRedeploying(false);
+      setTimeout(() => setRedeployMessage(''), 5000);
+    }
+  };
 
   const stats = [
     {
@@ -70,7 +105,7 @@ export default function AdminDashboard() {
       {/* Quick Actions */}
       <div className="bg-slate-950 border border-green-600/30 rounded-2xl p-8">
         <h3 className="text-2xl font-bold text-green-300 mb-6">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             href="/admin/products?action=add"
             className="flex items-center gap-4 p-6 bg-green-600/10 border border-green-600/30 rounded-xl hover:bg-green-600/20 hover:border-green-600/50 transition-all"
@@ -103,7 +138,29 @@ export default function AdminDashboard() {
               <p className="text-sm text-blue-200/70">Manage your inventory</p>
             </div>
           </Link>
+
+          <button
+            onClick={handleRedeploy}
+            disabled={redeploying}
+            className="flex items-center gap-4 p-6 bg-orange-600/10 border border-orange-600/30 rounded-xl hover:bg-orange-600/20 hover:border-orange-600/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="text-4xl">{redeploying ? '⏳' : '🚀'}</span>
+            <div>
+              <p className="font-semibold text-orange-300">
+                {redeploying ? 'Redeploying...' : 'Redeploy Site'}
+              </p>
+              <p className="text-sm text-orange-200/70">
+                {redeploying ? 'Please wait...' : 'Trigger site rebuild'}
+              </p>
+            </div>
+          </button>
         </div>
+
+        {redeployMessage && (
+          <div className="mt-4 p-4 bg-slate-900/50 border border-orange-600/30 rounded-lg">
+            <p className="text-orange-300">{redeployMessage}</p>
+          </div>
+        )}
       </div>
 
       {/* Recent Activity */}

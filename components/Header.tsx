@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 import CartPanel from './CartPanel';
-import { getSupabaseClient } from '@/utils/supabase/client';
 
 export default function Header() {
   const { cartCount } = useCart();
+  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -15,20 +16,19 @@ export default function Header() {
 
   useEffect(() => {
     const checkAdmin = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        setAdminLoading(false);
+        return;
+      }
+
       try {
-        const supabase = getSupabaseClient();
-        const { data: sessionData } = await supabase.auth.getSession();
-        
-        if (sessionData.session?.user?.id) {
-          const { data: adminUser } = await supabase
-            .from('admin_users')
-            .select('id')
-            .eq('id', sessionData.session.user.id)
-            .eq('status', 'active')
-            .single();
-          
-          setIsAdmin(!!adminUser);
-        }
+        // Check if user is admin (you might want to move this to AuthContext)
+        const adminEmails = process.env.NEXT_PUBLIC_GGHUB_ADMIN_EMAILS?.split(',') || [];
+        const userEmail = user.email || '';
+        const isAdminUser = adminEmails.includes(userEmail.trim());
+
+        setIsAdmin(isAdminUser);
       } catch (err) {
         console.error('Error checking admin status:', err);
         setIsAdmin(false);
@@ -37,8 +37,27 @@ export default function Header() {
       }
     };
 
-    checkAdmin();
-  }, []);
+    if (!authLoading) {
+      checkAdmin();
+    }
+  }, [user, authLoading]);
+
+  const handleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Sign in error:', error);
+      alert('Failed to sign in. Please try again.');
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
 
   return (
     <>
@@ -50,6 +69,28 @@ export default function Header() {
               <span className="text-green-400">🚚 Free shipping on orders over ₦20,000</span>
               <span className="hidden md:inline text-green-500">•</span>
               <span className="hidden md:inline text-green-400">Reliable delivery and service</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              {user ? (
+                <div className="flex items-center space-x-2">
+                  <Link href="/account" className="text-green-300 hover:text-white transition-colors text-sm">
+                    {user.user_metadata?.full_name || user.email}
+                  </Link>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-green-400 hover:text-white transition-colors text-sm"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleSignIn}
+                  className="bg-green-600 text-black px-3 py-1 rounded text-sm font-semibold hover:bg-green-500 transition-colors"
+                >
+                  Sign In
+                </button>
+              )}
             </div>
           </div>
 
@@ -103,6 +144,22 @@ export default function Header() {
                 )}
               </button>
 
+              {user ? (
+                <Link
+                  href="/account"
+                  className="bg-green-700 text-white px-4 py-2 rounded-full font-semibold hover:bg-green-500 transition-colors hidden md:inline-block"
+                >
+                  My Account
+                </Link>
+              ) : (
+                <button
+                  onClick={handleSignIn}
+                  className="bg-green-600 text-black px-4 py-2 rounded-full font-semibold hover:bg-green-500 transition-colors hidden md:inline-block"
+                >
+                  Sign In
+                </button>
+              )}
+
               {/* Admin Panel Button */}
               {!adminLoading && isAdmin && (
                 <Link
@@ -149,6 +206,11 @@ export default function Header() {
                 <Link href="/contact" className="text-green-300 hover:text-white transition-colors font-medium py-2">
                   Contact
                 </Link>
+                {user && (
+                  <Link href="/account" className="text-green-300 hover:text-white transition-colors font-medium py-2">
+                    My Account
+                  </Link>
+                )}
                 {!adminLoading && isAdmin && (
                   <>
                     <div className="border-t border-green-800 pt-3 mt-3">
@@ -158,6 +220,23 @@ export default function Header() {
                     </div>
                   </>
                 )}
+                <div className="border-t border-green-800 pt-3 mt-3">
+                  {user ? (
+                    <button
+                      onClick={handleSignOut}
+                      className="text-green-400 hover:text-white transition-colors font-medium py-2"
+                    >
+                      Sign Out
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSignIn}
+                      className="bg-green-600 text-black px-4 py-2 rounded font-semibold hover:bg-green-500 transition-colors"
+                    >
+                      Sign In
+                    </button>
+                  )}
+                </div>
               </nav>
             </div>
           )}
