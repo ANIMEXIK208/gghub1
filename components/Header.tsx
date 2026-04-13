@@ -70,28 +70,6 @@ export default function Header() {
               <span className="hidden md:inline text-green-500">•</span>
               <span className="hidden md:inline text-green-400">Reliable delivery and service</span>
             </div>
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <div className="flex items-center space-x-2">
-                  <Link href="/account" className="text-green-300 hover:text-white transition-colors text-sm">
-                    {user.user_metadata?.full_name || user.email}
-                  </Link>
-                  <button
-                    onClick={handleSignOut}
-                    className="text-green-400 hover:text-white transition-colors text-sm"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={handleSignIn}
-                  className="bg-green-600 text-black px-3 py-1 rounded text-sm font-semibold hover:bg-green-500 transition-colors"
-                >
-                  Sign In
-                </button>
-              )}
-            </div>
           </div>
 
           {/* Main Navigation */}
