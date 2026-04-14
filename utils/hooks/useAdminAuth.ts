@@ -2,6 +2,15 @@ import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/utils/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 
+const DEFAULT_ADMIN_EMAILS = ['ikechukwunelson31@gmail.com'];
+
+const getAdminEmails = () => {
+  const envEmails = process.env.NEXT_PUBLIC_GGHUB_ADMIN_EMAILS
+    ? process.env.NEXT_PUBLIC_GGHUB_ADMIN_EMAILS.split(',').map((email) => email.trim()).filter(Boolean)
+    : [];
+  return Array.from(new Set([...envEmails, ...DEFAULT_ADMIN_EMAILS]));
+};
+
 export const useAdminAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -17,10 +26,9 @@ export const useAdminAuth = () => {
         if (session?.user) {
           setUser(session.user);
           
-          // Check if user is admin
-          const adminEmails = process.env.NEXT_PUBLIC_GGHUB_ADMIN_EMAILS?.split(',') || [];
-          const userEmail = session.user.email || '';
-          const isAdminUser = adminEmails.includes(userEmail.trim());
+          const adminEmails = getAdminEmails();
+          const userEmail = (session.user.email || '').trim();
+          const isAdminUser = adminEmails.includes(userEmail);
           
           setIsAdmin(isAdminUser);
         } else {

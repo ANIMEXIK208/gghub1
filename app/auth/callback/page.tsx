@@ -4,6 +4,15 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from '@/utils/supabase/client';
 
+const DEFAULT_ADMIN_EMAILS = ['ikechukwunelson31@gmail.com'];
+
+const getAdminEmails = () => {
+  const envEmails = process.env.NEXT_PUBLIC_GGHUB_ADMIN_EMAILS
+    ? process.env.NEXT_PUBLIC_GGHUB_ADMIN_EMAILS.split(',').map((email) => email.trim()).filter(Boolean)
+    : [];
+  return Array.from(new Set([...envEmails, ...DEFAULT_ADMIN_EMAILS]));
+};
+
 export default function AuthCallback() {
   const router = useRouter();
 
@@ -21,8 +30,15 @@ export default function AuthCallback() {
           return;
         }
 
-        if (data.session) {
-          router.push('/account');
+        if (data.session?.user) {
+          const userEmail = (data.session.user.email || '').trim();
+          const adminEmails = getAdminEmails();
+
+          if (adminEmails.includes(userEmail)) {
+            router.push('/admin');
+          } else {
+            router.push('/account');
+          }
         } else {
           router.push('/');
         }

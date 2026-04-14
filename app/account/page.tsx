@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { getSafeImageUrl } from '@/utils/supabase/storage';
 import { getSupabaseClient } from '@/utils/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -32,59 +34,6 @@ export default function AccountPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const supabase = getSupabaseClient();
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.user) {
-        router.push('/');
-        return;
-      }
-
-      setUser(session.user);
-      await loadProfile(session.user.id);
-    } catch (error) {
-      console.error('Auth check error:', error);
-      router.push('/');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadProfile = async (userId: string) => {
-    try {
-      const supabase = getSupabaseClient();
-      const { data: profileData, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-        console.error('Profile load error:', error);
-        return;
-      }
-
-      if (profileData) {
-        setProfile(profileData);
-        setFormData({
-          display_name: profileData.display_name || '',
-          bio: profileData.bio || '',
-        });
-      } else {
-        // Create profile if it doesn't exist
-        await createProfile(userId);
-      }
-    } catch (error) {
-      console.error('Profile load error:', error);
-    }
-  };
-
   const createProfile = async (userId: string) => {
     try {
       const supabase = getSupabaseClient();
@@ -103,13 +52,17 @@ export default function AccountPage() {
       let counter = 1;
 
       while (true) {
-        const { data: existing } = await supabase
+        const { data: existing, error: usernameError } = await supabase
           .from('user_profiles')
           .select('id')
           .eq('username', username)
           .single();
 
         if (!existing) break;
+        if (usernameError && usernameError.code !== 'PGRST116') {
+          console.error('Username lookup error:', usernameError);
+          break;
+        }
         username = `${baseUsername}_${counter}`;
         counter++;
       }
@@ -145,6 +98,58 @@ export default function AccountPage() {
       console.error('Profile creation error:', error);
     }
   };
+
+  const loadProfile = async (userId: string) => {
+    try {
+      const supabase = getSupabaseClient();
+      const { data: profileData, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Profile load error:', error);
+        return;
+      }
+
+      if (profileData) {
+        setProfile(profileData);
+        setFormData({
+          display_name: profileData.display_name || '',
+          bio: profileData.bio || '',
+        });
+      } else {
+        await createProfile(userId);
+      }
+    } catch (error) {
+      console.error('Profile load error:', error);
+    }
+  };
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const supabase = getSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.user) {
+          router.push('/');
+          return;
+        }
+
+        setUser(session.user);
+        await loadProfile(session.user.id);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        router.push('/');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -317,9 +322,18 @@ export default function AccountPage() {
               <div>
                 <div className="flex items-center space-x-4 mb-6">
                   <div className="relative">
-                    <img
-                      src={avatarPreview || profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`}
+                    <Image
+                      src={
+                        avatarPreview?.startsWith('data:')
+                          ? avatarPreview
+                          : getSafeImageUrl(
+                              profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`,
+                              'profiles'
+                            )
+                      }
                       alt="Profile"
+                      width={80}
+                      height={80}
                       className="w-20 h-20 rounded-full border-2 border-green-400"
                     />
                     {editing && (

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useRequireAdmin } from '@/utils/hooks/useAdminAuth';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AdminUsersProvider } from '@/contexts/AdminUsersContext';
@@ -13,10 +14,12 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isLoginRoute = pathname === '/admin/login' || pathname === '/admin/login/';
   const { isAuthorized, loading } = useRequireAdmin();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  if (loading) {
+  if (loading && !isLoginRoute) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="text-center">
@@ -27,14 +30,14 @@ export default function AdminLayout({
     );
   }
 
-  if (!isAuthorized) {
+  if (!isLoginRoute && !isAuthorized) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-red-500 mb-4">Access Denied</h1>
           <p className="text-green-300 mb-6">You don&apos;t have permission to access the admin dashboard.</p>
-          <Link href="/" className="inline-block px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-            Return to Home
+          <Link href="/admin/login" className="inline-block px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            Admin Login
           </Link>
         </div>
       </div>

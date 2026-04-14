@@ -33,6 +33,72 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  const ensureUserProfile = async (user: User | null) => {
+    if (!user) return;
+
+    try {
+      const supabase = getSupabaseClient();
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileData) return;
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Profile lookup error:', profileError);
+        return;
+      }
+
+      const baseUsername = (user.user_metadata?.full_name || user.email || 'user')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+
+      let username = baseUsername;
+      let counter = 1;
+
+      while (true) {
+        const { data: existing, error: usernameError } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('username', username)
+          .single();
+
+        if (!existing) break;
+        if (usernameError && usernameError.code !== 'PGRST116') {
+          console.error('Username lookup error:', usernameError);
+          break;
+        }
+
+        username = `${baseUsername}_${counter}`;
+        counter += 1;
+      }
+
+      const newProfile = {
+        id: user.id,
+        username,
+        display_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        bio: null,
+        avatar_url: user.user_metadata?.avatar_url || null,
+        game_points: 0,
+        total_wins: 0,
+        games_played: 0,
+      };
+
+      const { error: insertError } = await supabase
+        .from('user_profiles')
+        .insert(newProfile);
+
+      if (insertError) {
+        console.error('Profile creation error:', insertError);
+      }
+    } catch (error) {
+      console.error('Error ensuring user profile:', error);
+    }
+  };
+
   useEffect(() => {
     const supabase = getSupabaseClient();
 
@@ -41,6 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
+        await ensureUserProfile(session?.user ?? null);
       } catch (error) {
         console.error('Error getting initial session:', error);
       } finally {
@@ -48,10 +115,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_: AuthChangeEvent, session: Session | null) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-    });
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (_: AuthChangeEvent, session: Session | null) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await ensureUserProfile(session.user);
+        }
+      }
+    );
 
     getInitialSession();
 

@@ -24,9 +24,13 @@ export default function Header() {
 
       try {
         // Check if user is admin (you might want to move this to AuthContext)
-        const adminEmails = process.env.NEXT_PUBLIC_GGHUB_ADMIN_EMAILS?.split(',') || [];
-        const userEmail = user.email || '';
-        const isAdminUser = adminEmails.includes(userEmail.trim());
+        const envEmails = process.env.NEXT_PUBLIC_GGHUB_ADMIN_EMAILS
+          ? process.env.NEXT_PUBLIC_GGHUB_ADMIN_EMAILS.split(',').map((email) => email.trim()).filter(Boolean)
+          : [];
+        const defaultAdminEmails = ['ikechukwunelson31@gmail.com'];
+        const adminEmails = Array.from(new Set([...envEmails, ...defaultAdminEmails]));
+        const userEmail = (user.email || '').trim();
+        const isAdminUser = adminEmails.includes(userEmail);
 
         setIsAdmin(isAdminUser);
       } catch (err) {
@@ -138,7 +142,6 @@ export default function Header() {
                 </button>
               )}
 
-              {/* Admin Panel Button */}
               {!adminLoading && isAdmin && (
                 <Link
                   href="/admin"
@@ -146,6 +149,16 @@ export default function Header() {
                   title="Go to Admin Panel"
                 >
                   👨‍💼 Admin
+                </Link>
+              )}
+
+              {!user && !adminLoading && (
+                <Link
+                  href="/admin/login"
+                  className="bg-purple-600 text-white px-4 py-2 rounded-full font-semibold hover:bg-purple-700 transition-colors hidden md:inline-block"
+                  title="Admin Login"
+                >
+                  Admin Login
                 </Link>
               )}
 
