@@ -33,10 +33,14 @@ export const AdminUsersProvider: React.FC<{ children: ReactNode }> = ({ children
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const supabase = getSupabaseClient();
+  const supabase = typeof window !== 'undefined' ? getSupabaseClient() : null;
 
   const fetchUsersAndRoles = useCallback(async () => {
     try {
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError(null);
 
@@ -117,6 +121,9 @@ export const AdminUsersProvider: React.FC<{ children: ReactNode }> = ({ children
   const addUser = useCallback(
     async (userData: AdminUserForm) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
         const { error } = await supabase
           .from('admin_users')
           .insert({
@@ -146,6 +153,9 @@ export const AdminUsersProvider: React.FC<{ children: ReactNode }> = ({ children
   const editUser = useCallback(
     async (id: string, userData: Partial<AdminUserForm>) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
         const { error } = await supabase
           .from('admin_users')
           .update({
@@ -173,6 +183,9 @@ export const AdminUsersProvider: React.FC<{ children: ReactNode }> = ({ children
   const deleteUser = useCallback(
     async (id: string) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
         const { error } = await supabase.from('admin_users').delete().eq('id', id);
 
         if (error) throw error;
@@ -191,6 +204,9 @@ export const AdminUsersProvider: React.FC<{ children: ReactNode }> = ({ children
   const assignRole = useCallback(
     async (userId: string, roleId: number) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
         const { error } = await supabase
           .from('admin_users')
           .update({ role_id: roleId, updated_at: new Date().toISOString() })
@@ -212,6 +228,9 @@ export const AdminUsersProvider: React.FC<{ children: ReactNode }> = ({ children
   const suspendUser = useCallback(
     async (userId: string) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
         const { error } = await supabase
           .from('admin_users')
           .update({ status: 'suspended', updated_at: new Date().toISOString() })
@@ -233,6 +252,9 @@ export const AdminUsersProvider: React.FC<{ children: ReactNode }> = ({ children
   const activateUser = useCallback(
     async (userId: string) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
         const { error } = await supabase
           .from('admin_users')
           .update({ status: 'active', updated_at: new Date().toISOString() })
@@ -258,6 +280,9 @@ export const AdminUsersProvider: React.FC<{ children: ReactNode }> = ({ children
     changes?: Record<string, any>
   ) => {
     try {
+      if (!supabase) {
+        return;
+      }
       const { data: sessionData } = await supabase.auth.getSession();
 
       if (sessionData.session?.user?.id) {

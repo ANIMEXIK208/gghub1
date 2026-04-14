@@ -59,10 +59,12 @@ export default function AccountPage() {
           .single();
 
         if (!existing) break;
-        if (usernameError && usernameError.code !== 'PGRST116') {
+
+        if (usernameError && (usernameError as any).code !== 'PGRST116') {
           console.error('Username lookup error:', usernameError);
           break;
         }
+
         username = `${baseUsername}_${counter}`;
         counter++;
       }

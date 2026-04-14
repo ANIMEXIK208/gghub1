@@ -55,16 +55,16 @@ export const uploadFile = async (
     }
 
     // Get public URL
-    const { data: publicData, error: publicError } = supabase.storage
+    const publicData = supabase.storage
       .from(bucketName)
       .getPublicUrl(filePath);
 
-    if (publicError || !publicData?.publicUrl) {
-      console.error('Public URL error:', publicError);
-      throw publicError || new Error('Failed to get public URL after upload');
+    if (!publicData?.data?.publicUrl) {
+      console.error('Public URL error:', publicData);
+      throw new Error('Failed to get public URL after upload');
     }
 
-    return publicData.publicUrl;
+    return publicData.data.publicUrl;
   } catch (error) {
     console.error('Error uploading file:', error);
     throw error;

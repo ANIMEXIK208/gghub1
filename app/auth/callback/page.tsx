@@ -22,7 +22,7 @@ export default function AuthCallback() {
         const supabase = getSupabaseClient();
 
         // Handle the OAuth callback and persist the session
-        const { data, error } = await supabase.auth.getSessionFromUrl();
+        const { data, error } = await supabase.auth.getSession();
 
         if (error) {
           console.error('Auth callback error:', error);

@@ -39,7 +39,7 @@ export const AnalyticsProvider: React.FC<{ children: ReactNode }> = ({
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const supabase = getSupabaseClient();
+  const supabase = typeof window !== 'undefined' ? getSupabaseClient() : null;
 
   const getDashboardMetrics = useCallback(
     async (dateRange: 'today' | 'week' | 'month' = 'today') => {
@@ -68,6 +68,11 @@ export const AnalyticsProvider: React.FC<{ children: ReactNode }> = ({
             );
         }
 
+        if (!supabase) {
+          setLoading(false);
+          setError('Supabase client is unavailable');
+          return;
+        }
         // Fetch analytics events
         const { data: eventsData, error: eventsError } = await supabase
           .from('analytics')
@@ -156,6 +161,9 @@ export const AnalyticsProvider: React.FC<{ children: ReactNode }> = ({
   const trackEvent = useCallback(
     async (eventType: string, metadata?: Record<string, any>) => {
       try {
+        if (!supabase) {
+          return;
+        }
         const { data: sessionData } = await supabase.auth.getSession();
 
         await supabase.from('analytics').insert({

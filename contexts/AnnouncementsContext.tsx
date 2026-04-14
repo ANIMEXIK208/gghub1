@@ -33,7 +33,7 @@ export const useAnnouncements = () => {
 export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = getSupabaseClient();
+  const getSupabase = () => getSupabaseClient();
 
   useEffect(() => {
     fetchAnnouncements();
@@ -41,6 +41,7 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
   }, []);
 
   const setupRealtimeSubscription = () => {
+    const supabase = getSupabase();
     const subscription = supabase
       .channel('announcements_changes')
       .on(
@@ -67,6 +68,7 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const fetchAnnouncements = async () => {
     try {
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('announcements')
         .select('*')
@@ -96,6 +98,7 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const addAnnouncement = async (announcement: Omit<Announcement, 'id'>) => {
     try {
+      const supabase = getSupabase();
       const { error } = await supabase
         .from('announcements')
         .insert({
@@ -119,6 +122,7 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const editAnnouncement = async (id: number, updated: Partial<Announcement>) => {
     try {
+      const supabase = getSupabase();
       const updateData: any = {};
       if (updated.title !== undefined) updateData.title = updated.title;
       if (updated.message !== undefined) updateData.description = updated.message;
@@ -144,6 +148,7 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const deleteAnnouncement = async (id: number) => {
     try {
+      const supabase = getSupabase();
       const { error } = await supabase
         .from('announcements')
         .delete()

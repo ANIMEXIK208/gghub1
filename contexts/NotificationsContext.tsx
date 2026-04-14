@@ -33,10 +33,14 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const supabase = getSupabaseClient();
+  const supabase = typeof window !== 'undefined' ? getSupabaseClient() : null;
 
   const fetchNotifications = useCallback(async () => {
     try {
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError(null);
 
@@ -94,6 +98,9 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const sendNotification = useCallback(
     async (notification: NotificationForm) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
         const { data: sessionData } = await supabase.auth.getSession();
 
         const { error } = await supabase.from('notifications').insert({
@@ -124,6 +131,9 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const scheduleNotification = useCallback(
     async (notification: NotificationForm, scheduledAt: string) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
         const { data: sessionData } = await supabase.auth.getSession();
 
         const { error } = await supabase.from('notifications').insert({
@@ -156,6 +166,9 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       template: Omit<NotificationTemplate, 'id' | 'created_at' | 'updated_at'>
     ) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
         const { data: sessionData } = await supabase.auth.getSession();
 
         const { error } = await supabase.from('notification_templates').insert({
@@ -183,6 +196,9 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const updateTemplate = useCallback(
     async (templateId: number, template: Partial<NotificationTemplate>) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
         const { error } = await supabase
           .from('notification_templates')
           .update({
@@ -211,6 +227,9 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const deleteTemplate = useCallback(
     async (templateId: number) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
         const { error } = await supabase
           .from('notification_templates')
           .delete()
@@ -232,7 +251,10 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const deleteNotification = useCallback(
     async (notificationId: number) => {
       try {
-        const { error } = await supabase
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
+      const { error } = await supabase
           .from('notifications')
           .delete()
           .eq('id', notificationId);

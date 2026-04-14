@@ -15,10 +15,14 @@ export const useAdminAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const supabase = getSupabaseClient();
+  const supabase = typeof window !== 'undefined' ? getSupabaseClient() : null;
 
   useEffect(() => {
     const checkAuth = async () => {
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
       try {
         // Get current session
         const { data: { session } } = await supabase.auth.getSession();

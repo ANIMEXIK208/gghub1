@@ -1,29 +1,37 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+let supabaseInstance: SupabaseClient | null = null;
 
-const ensureSupabaseEnv = () => {
+const getSupabaseEnv = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
       'Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
     );
   }
+
+  return { supabaseUrl, supabaseKey };
 };
 
-let supabaseInstance: any = null;
-
 export const getSupabaseClient = () => {
-  ensureSupabaseEnv();
+  if (typeof window === 'undefined') {
+    throw new Error('Supabase client can only be used in the browser.');
+  }
+
+  const { supabaseUrl, supabaseKey } = getSupabaseEnv();
+
   if (!supabaseInstance) {
-    supabaseInstance = createSupabaseClient(supabaseUrl!, supabaseKey!, {
+    supabaseInstance = createSupabaseClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
-    }) as any;
+    }) as SupabaseClient;
   }
+
   return supabaseInstance;
 };

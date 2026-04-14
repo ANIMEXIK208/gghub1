@@ -29,7 +29,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [theme, setTheme] = useState<ThemeCustomization | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const supabase = getSupabaseClient();
+  const supabase = typeof window !== 'undefined' ? getSupabaseClient() : null;
 
   const applyTheme = useCallback((themeData: ThemeCustomization) => {
     // Apply CSS variables
@@ -52,6 +52,11 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const fetchTheme = useCallback(async () => {
     try {
+      if (!supabase) {
+        setTheme(null);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError(null);
 
@@ -111,6 +116,10 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const updateTheme = useCallback(
     async (themeUpdates: ThemeCustomizationForm) => {
       try {
+        if (!supabase) {
+          throw new Error('Supabase client is unavailable');
+        }
+
         const { data: sessionData } = await supabase.auth.getSession();
 
         if (!sessionData.session?.user?.id) {
@@ -150,6 +159,9 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const resetTheme = useCallback(async () => {
     try {
+      if (!supabase) {
+        throw new Error('Supabase client is unavailable');
+      }
       if (theme?.id) {
         const { error } = await supabase
           .from('theme_customization')

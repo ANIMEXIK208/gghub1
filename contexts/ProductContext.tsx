@@ -37,7 +37,7 @@ export const useProducts = () => {
 export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = getSupabaseClient();
+  const getSupabase = () => getSupabaseClient();
 
   useEffect(() => {
     fetchProducts();
@@ -45,6 +45,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   const setupRealtimeSubscription = () => {
+    const supabase = getSupabase();
     const subscription = supabase
       .channel('products_changes')
       .on(
@@ -71,6 +72,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const fetchProducts = async () => {
     try {
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -115,6 +117,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
+      const supabase = getSupabase();
       const imageArray = product.images && product.images.length > 0 
         ? product.images 
         : (product.image ? [product.image] : []);
@@ -154,6 +157,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (updatedProduct.rating !== undefined) updateData.rating = updatedProduct.rating;
       if (updatedProduct.category !== undefined) updateData.category = updatedProduct.category;
 
+      const supabase = getSupabase();
       const { error } = await supabase
         .from('products')
         .update(updateData)
@@ -173,6 +177,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const deleteProduct = async (id: number) => {
     try {
+      const supabase = getSupabase();
       const { error } = await supabase
         .from('products')
         .delete()
