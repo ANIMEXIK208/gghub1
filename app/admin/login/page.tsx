@@ -6,6 +6,10 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminAuth } from '@/utils/hooks/useAdminAuth';
 
+const isSupabaseConfigured = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const { signInWithGoogle } = useAuth();
@@ -54,6 +58,12 @@ export default function AdminLoginPage() {
             </div>
           )}
 
+          {!isSupabaseConfigured && (
+            <div className="rounded-3xl border border-yellow-500/20 bg-yellow-900/10 p-6 text-yellow-200">
+              <p className="font-semibold">Supabase is not configured.</p>
+              <p>Please set <code className="bg-slate-800 px-2 py-1 rounded">NEXT_PUBLIC_SUPABASE_URL</code> and <code className="bg-slate-800 px-2 py-1 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in Netlify environment variables.</p>
+            </div>
+          )}
           {error && (
             <div className="rounded-3xl border border-red-500/20 bg-red-900/10 p-6 text-red-200">
               {error}
