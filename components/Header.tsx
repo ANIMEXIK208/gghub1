@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -127,12 +128,27 @@ export default function Header() {
               </button>
 
               {user ? (
-                <Link
-                  href="/account"
-                  className="bg-green-700 text-white px-4 py-2 rounded-full font-semibold hover:bg-green-500 transition-colors hidden md:inline-block"
-                >
-                  My Account
-                </Link>
+                <>
+                  <div className="hidden md:flex items-center gap-3 rounded-full border border-green-700 bg-slate-900/80 px-3 py-2">
+                    <Image
+                      src={user.user_metadata?.avatar_url || 'https://via.placeholder.com/40?text=GG'}
+                      alt={user.user_metadata?.full_name || user.email || 'GGHub User'}
+                      width={36}
+                      height={36}
+                      className="w-9 h-9 rounded-full object-cover"
+                      unoptimized
+                    />
+                    <span className="text-sm font-semibold text-green-100">
+                      {user.user_metadata?.full_name || user.email?.split('@')[0] || 'Player'}
+                    </span>
+                  </div>
+                  <Link
+                    href="/account"
+                    className="bg-green-700 text-white px-4 py-2 rounded-full font-semibold hover:bg-green-500 transition-colors hidden md:inline-block"
+                  >
+                    My Account
+                  </Link>
+                </>
               ) : (
                 <button
                   onClick={handleSignIn}

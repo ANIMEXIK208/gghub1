@@ -52,7 +52,7 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
           fetchAnnouncements();
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: string) => {
         if (status === 'SUBSCRIBED') {
           console.log('✅ Real-time announcement updates enabled');
         } else if (status === 'CHANNEL_ERROR') {

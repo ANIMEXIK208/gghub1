@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getSafeImageUrl } from '@/utils/supabase/storage';
@@ -34,7 +34,7 @@ export default function AccountPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const router = useRouter();
 
-  const createProfile = async (userId: string) => {
+  const createProfile = useCallback(async (userId: string) => {
     try {
       const supabase = getSupabaseClient();
       const { data: { user } } = await supabase.auth.getUser();
@@ -97,9 +97,9 @@ export default function AccountPage() {
     } catch (error) {
       console.error('Profile creation error:', error);
     }
-  };
+  }, []);
 
-  const loadProfile = async (userId: string) => {
+  const loadProfile = useCallback(async (userId: string) => {
     try {
       const supabase = getSupabaseClient();
       const { data: profileData, error } = await supabase
@@ -125,7 +125,7 @@ export default function AccountPage() {
     } catch (error) {
       console.error('Profile load error:', error);
     }
-  };
+  }, [createProfile]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -149,7 +149,7 @@ export default function AccountPage() {
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, loadProfile]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -56,7 +56,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
           fetchProducts();
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: string) => {
         if (status === 'SUBSCRIBED') {
           console.log('✅ Real-time product updates enabled');
         } else if (status === 'CHANNEL_ERROR') {
