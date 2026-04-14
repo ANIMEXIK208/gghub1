@@ -18,10 +18,15 @@ const getSupabaseEnv = () => {
 
 export const getSupabaseClient = () => {
   if (typeof window === 'undefined') {
-    throw new Error('Supabase client can only be used in the browser.');
+    return null;
   }
 
-  const { supabaseUrl, supabaseKey } = getSupabaseEnv();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return null;
+  }
 
   if (!supabaseInstance) {
     supabaseInstance = createSupabaseClient(supabaseUrl, supabaseKey, {
@@ -34,4 +39,12 @@ export const getSupabaseClient = () => {
   }
 
   return supabaseInstance;
+};
+
+export const getBrowserSupabaseClient = () => {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw new Error('Supabase client is not available in this environment.');
+  }
+  return supabase;
 };

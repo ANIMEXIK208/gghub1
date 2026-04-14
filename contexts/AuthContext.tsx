@@ -38,6 +38,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client is not available in this environment.');
+      }
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('id')
@@ -101,6 +104,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const supabase = getSupabaseClient();
+    if (!supabase) {
+      console.error('Supabase client unavailable during auth initialization.');
+      setLoading(false);
+      return;
+    }
 
     const getInitialSession = async () => {
       try {
@@ -135,6 +143,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     try {
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client is not available.');
+      }
       const redirectBase = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -156,6 +167,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     try {
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client is not available.');
+      }
       const { error } = await supabase.auth.signOut();
 
       if (error) {

@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './client';
+import { getBrowserSupabaseClient } from './client';
 import { compressImage } from '../imageCompression';
 
 type SupabaseBucket = { name: string };
@@ -7,8 +7,16 @@ const PRODUCT_IMAGES_BUCKET = 'product-images';
 const ANNOUNCEMENT_IMAGES_BUCKET = 'announcement-images';
 const PROFILE_IMAGES_BUCKET = 'profiles';
 
+const requireSupabaseClient = () => {
+  const supabase = getBrowserSupabaseClient();
+  if (!supabase) {
+    throw new Error('Supabase client is not available in this environment.');
+  }
+  return supabase;
+};
+
 const ensureBucketExists = async (bucketName: string): Promise<void> => {
-  const supabase = getSupabaseClient();
+  const supabase = getBrowserSupabaseClient();
   const { data: existingBuckets, error } = await supabase.storage.listBuckets();
 
   if (error) {
@@ -30,7 +38,7 @@ export const uploadFile = async (
   bucketName: string,
   folderPath: string = ''
 ): Promise<string> => {
-  const supabase = getSupabaseClient();
+  const supabase = getBrowserSupabaseClient();
 
   await ensureBucketExists(bucketName);
 
@@ -99,7 +107,7 @@ export const uploadAnnouncementImage = async (file: File): Promise<string> => {
  * Delete file from Supabase Storage
  */
 export const deleteFile = async (bucketName: string, filePath: string): Promise<void> => {
-  const supabase = getSupabaseClient();
+  const supabase = requireSupabaseClient();
 
   try {
     const { error } = await supabase.storage
@@ -157,7 +165,7 @@ export const getSafeImageUrl = (rawUrl?: string | null, fallbackBucket?: string)
  * Create buckets if they don't exist
  */
 export const ensureBucketsExist = async (): Promise<void> => {
-  const supabase = getSupabaseClient();
+  const supabase = getBrowserSupabaseClient();
   const buckets = [
     { name: PRODUCT_IMAGES_BUCKET, public: true },
     { name: ANNOUNCEMENT_IMAGES_BUCKET, public: true },

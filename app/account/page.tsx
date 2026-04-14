@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getSafeImageUrl } from '@/utils/supabase/storage';
-import { getSupabaseClient } from '@/utils/supabase/client';
+import { getBrowserSupabaseClient } from '@/utils/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
 interface UserProfile {
@@ -34,9 +34,11 @@ export default function AccountPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const router = useRouter();
 
+  const getBrowserSupabase = () => getBrowserSupabaseClient();
+
   const createProfile = useCallback(async (userId: string) => {
     try {
-      const supabase = getSupabaseClient();
+      const supabase = getBrowserSupabase();
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) return;
@@ -103,7 +105,7 @@ export default function AccountPage() {
 
   const loadProfile = useCallback(async (userId: string) => {
     try {
-      const supabase = getSupabaseClient();
+      const supabase = getBrowserSupabase();
       const { data: profileData, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -132,7 +134,7 @@ export default function AccountPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const supabase = getSupabaseClient();
+const supabase = getBrowserSupabase();
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session?.user) {
@@ -177,7 +179,7 @@ export default function AccountPage() {
     if (!avatarFile || !user) return null;
 
     try {
-      const supabase = getSupabaseClient();
+      const supabase = getBrowserSupabase();
       const fileExt = avatarFile.name.split('.').pop();
       const fileName = `${user.id}_${Date.now()}.${fileExt}`;
 
@@ -222,7 +224,7 @@ export default function AccountPage() {
         updated_at: new Date().toISOString(),
       };
 
-      const supabase = getSupabaseClient();
+      const supabase = getBrowserSupabase();
       const { data, error } = await supabase
         .from('user_profiles')
         .update(updates)
@@ -250,7 +252,7 @@ export default function AccountPage() {
 
   const handleSignOut = async () => {
     try {
-      const supabase = getSupabaseClient();
+      const supabase = getBrowserSupabase();
       await supabase.auth.signOut();
       router.push('/');
     } catch (error) {
