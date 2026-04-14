@@ -12,10 +12,10 @@
   status = 200
 
 [context.production.environment]
-  NEXT_PUBLIC_APP_URL = "https://getgaming.netlify.app"
+  NEXT_PUBLIC_APP_URL = "https://globalgamminghub.netlify.app"
 
 [context.preview.environment]
-  NEXT_PUBLIC_APP_URL = "https://deploy-preview-*.getgaming.netlify.app"
+  NEXT_PUBLIC_APP_URL = "https://deploy-preview-*.globalgamminghub.netlify.app"
 
 [context.branch-deploy.environment]
-  NEXT_PUBLIC_APP_URL = "https://*.getgaming.netlify.app"
+  NEXT_PUBLIC_APP_URL = "https://*.globalgamminghub.netlify.app"

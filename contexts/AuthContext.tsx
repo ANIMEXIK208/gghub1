@@ -146,7 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!supabase) {
         throw new Error('Supabase auth is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
       }
-      const redirectBase = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+      const redirectBase = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL || '';
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
