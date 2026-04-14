@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getBrowserSupabaseClient } from '@/utils/supabase/client';
+import { getSupabaseClient } from '@/utils/supabase/client';
 
 const DEFAULT_ADMIN_EMAILS = ['ikechukwunelson31@gmail.com'];
 
@@ -17,13 +17,18 @@ export default function AuthCallback() {
   const router = useRouter();
 
   const getBrowserSupabase = () => {
-    return getBrowserSupabaseClient();
+    return getSupabaseClient();
   };
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
         const supabase = getBrowserSupabase();
+        if (!supabase) {
+          console.error('Supabase client not configured for auth callback.');
+          router.push('/?error=supabase_not_configured');
+          return;
+        }
 
         // Handle the OAuth callback and persist the session
         const { data, error } = await supabase.auth.getSession();

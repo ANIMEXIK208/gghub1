@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getBrowserSupabaseClient } from '@/utils/supabase/client';
+import { getSupabaseClient } from '@/utils/supabase/client';
 import { normalizeSupabaseImageUrl } from '@/utils/supabase/storage';
 
 export interface Product {
@@ -37,7 +37,7 @@ export const useProducts = () => {
 export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const getBrowserSupabase = () => getBrowserSupabaseClient();
+  const getBrowserSupabase = () => getSupabaseClient();
 
   useEffect(() => {
     fetchProducts();
@@ -46,6 +46,10 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const setupRealtimeSubscription = () => {
     const supabase = getBrowserSupabase();
+    if (!supabase) {
+      console.error('Supabase client not configured for products realtime.');
+      return () => {};
+    }
     const subscription = supabase
       .channel('products_changes')
       .on(
@@ -73,6 +77,11 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const fetchProducts = async () => {
     try {
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for fetching products.');
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -118,6 +127,10 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for addProduct.');
+        return;
+      }
       const imageArray = product.images && product.images.length > 0 
         ? product.images 
         : (product.image ? [product.image] : []);
@@ -158,6 +171,10 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (updatedProduct.category !== undefined) updateData.category = updatedProduct.category;
 
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for editProduct.');
+        return;
+      }
       const { error } = await supabase
         .from('products')
         .update(updateData)
@@ -178,6 +195,10 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const deleteProduct = async (id: number) => {
     try {
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for deleteProduct.');
+        return;
+      }
       const { error } = await supabase
         .from('products')
         .delete()

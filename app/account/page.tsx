@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getSafeImageUrl } from '@/utils/supabase/storage';
-import { getBrowserSupabaseClient } from '@/utils/supabase/client';
+import { getSupabaseClient } from '@/utils/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
 interface UserProfile {
@@ -34,11 +34,15 @@ export default function AccountPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const router = useRouter();
 
-  const getBrowserSupabase = () => getBrowserSupabaseClient();
+  const getBrowserSupabase = () => getSupabaseClient();
 
   const createProfile = useCallback(async (userId: string) => {
     try {
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for account profile creation.');
+        return;
+      }
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) return;
@@ -106,6 +110,10 @@ export default function AccountPage() {
   const loadProfile = useCallback(async (userId: string) => {
     try {
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for loading profile.');
+        return;
+      }
       const { data: profileData, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -134,7 +142,12 @@ export default function AccountPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-const supabase = getBrowserSupabase();
+        const supabase = getBrowserSupabase();
+        if (!supabase) {
+          console.error('Supabase client not configured for account auth check.');
+          router.push('/?error=supabase_not_configured');
+          return;
+        }
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session?.user) {
@@ -180,6 +193,10 @@ const supabase = getBrowserSupabase();
 
     try {
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for avatar upload.');
+        return null;
+      }
       const fileExt = avatarFile.name.split('.').pop();
       const fileName = `${user.id}_${Date.now()}.${fileExt}`;
 
@@ -225,6 +242,11 @@ const supabase = getBrowserSupabase();
       };
 
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for profile update.');
+        alert('Supabase is not configured. Please contact the site administrator.');
+        return;
+      }
       const { data, error } = await supabase
         .from('user_profiles')
         .update(updates)
@@ -253,6 +275,11 @@ const supabase = getBrowserSupabase();
   const handleSignOut = async () => {
     try {
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for sign out.');
+        router.push('/?error=supabase_not_configured');
+        return;
+      }
       await supabase.auth.signOut();
       router.push('/');
     } catch (error) {

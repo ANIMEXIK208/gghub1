@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getBrowserSupabaseClient } from '@/utils/supabase/client';
+import { getSupabaseClient } from '@/utils/supabase/client';
 import { normalizeSupabaseImageUrl } from '@/utils/supabase/storage';
 
 export interface Announcement {
@@ -34,8 +34,7 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const getBrowserSupabase = () => {
-    const supabase = getBrowserSupabaseClient();
-    return supabase;
+    return getSupabaseClient();
   };
 
   useEffect(() => {
@@ -45,6 +44,10 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const setupRealtimeSubscription = () => {
     const supabase = getBrowserSupabase();
+    if (!supabase) {
+      console.error('Supabase client not configured for announcements realtime.');
+      return () => {};
+    }
     const subscription = supabase
       .channel('announcements_changes')
       .on(
@@ -72,6 +75,11 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
   const fetchAnnouncements = async () => {
     try {
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for announcements fetch.');
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from('announcements')
         .select('*')
@@ -102,6 +110,10 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
   const addAnnouncement = async (announcement: Omit<Announcement, 'id'>) => {
     try {
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for addAnnouncement.');
+        return;
+      }
       const { error } = await supabase
         .from('announcements')
         .insert({
@@ -126,6 +138,10 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
   const editAnnouncement = async (id: number, updated: Partial<Announcement>) => {
     try {
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for editAnnouncement.');
+        return;
+      }
       const updateData: any = {};
       if (updated.title !== undefined) updateData.title = updated.title;
       if (updated.message !== undefined) updateData.description = updated.message;
@@ -152,6 +168,10 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
   const deleteAnnouncement = async (id: number) => {
     try {
       const supabase = getBrowserSupabase();
+      if (!supabase) {
+        console.error('Supabase client not configured for deleteAnnouncement.');
+        return;
+      }
       const { error } = await supabase
         .from('announcements')
         .delete()
