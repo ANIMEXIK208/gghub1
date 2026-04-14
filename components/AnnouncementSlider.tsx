@@ -40,12 +40,16 @@ export default function AnnouncementSlider({ announcements }: AnnouncementSlider
       {announcement.image && (
         <div className="mb-6 rounded-lg overflow-hidden border border-green-500/40 shadow-lg">
           <Image
-            src={announcement.image}
+            src={announcement.image || 'https://via.placeholder.com/800x300?text=No+Image'}
             alt={announcement.title}
             width={800}
             height={300}
             className="w-full h-auto max-h-80 object-cover"
             priority
+            onError={(event) => {
+              const target = event.currentTarget as HTMLImageElement;
+              target.src = 'https://via.placeholder.com/800x300?text=No+Image';
+            }}
           />
         </div>
       )}

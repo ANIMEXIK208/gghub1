@@ -48,12 +48,16 @@ export default function ProductSlider({ products }: ProductSliderProps) {
         <div className="space-y-6">
           <div className="rounded-3xl overflow-hidden shadow-2xl shadow-black/60 border border-green-600/20">
             <Image
-              src={product.image}
+              src={product.image || 'https://via.placeholder.com/400x320?text=No+Image'}
               alt={product.name}
               width={400}
               height={320}
               className="w-full h-80 object-cover"
               priority
+              onError={(event) => {
+                const target = event.currentTarget as HTMLImageElement;
+                target.src = 'https://via.placeholder.com/400x320?text=No+Image';
+              }}
             />
           </div>
           <div className="space-y-3">

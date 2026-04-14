@@ -188,7 +188,17 @@ export default function CartPanel({ open, onClose }: CartPanelProps) {
             ) : (
               cartItems.map((item) => (
                 <div key={item.product.id} className="flex gap-4 items-start border-b pb-4">
-                  <Image src={item.product.image} alt={item.product.name} width={80} height={80} className="w-20 h-20 object-cover rounded" />
+                  <Image
+                    src={item.product.image || 'https://via.placeholder.com/80?text=No+Img'}
+                    alt={item.product.name}
+                    width={80}
+                    height={80}
+                    className="w-20 h-20 object-cover rounded"
+                    onError={(event) => {
+                      const target = event.currentTarget as HTMLImageElement;
+                      target.src = 'https://via.placeholder.com/80?text=No+Img';
+                    }}
+                  />
                   <div className="flex-1">
                     <h3 className="font-semibold">{item.product.name}</h3>
                     <p className="text-sm text-gray-600">Unit price: {formatNairaPrice(item.product.price)}</p>

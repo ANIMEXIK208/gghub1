@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { getSupabaseClient } from '@/utils/supabase/client';
+import { normalizeSupabaseImageUrl } from '@/utils/supabase/storage';
 
 export interface Announcement {
   id: number;
@@ -36,7 +37,33 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   useEffect(() => {
     fetchAnnouncements();
+    setupRealtimeSubscription();
   }, []);
+
+  const setupRealtimeSubscription = () => {
+    const subscription = supabase
+      .channel('announcements_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'announcements' },
+        (payload: any) => {
+          console.log('Announcement change detected:', payload.eventType);
+          // Refetch announcements when changes occur
+          fetchAnnouncements();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Real-time announcement updates enabled');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.warn('⚠️ Real-time subscription error, will retry');
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  };
 
   const fetchAnnouncements = async () => {
     try {
@@ -55,7 +82,7 @@ export const AnnouncementsProvider: React.FC<{ children: ReactNode }> = ({ child
           id: item.id,
           title: item.title,
           message: item.description || '',
-          image: item.image_url || '',
+          image: normalizeSupabaseImageUrl(item.image_url, 'announcement-images') || '',
           emoji: item.emoji || '',
         }));
         setAnnouncements(formattedAnnouncements);

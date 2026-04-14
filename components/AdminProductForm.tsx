@@ -81,7 +81,7 @@ export default function ProductForm({
       setCompressionStats(stats);
 
       // Upload compressed image
-      const imageUrl = await uploadProductImage(file);
+      const imageUrl = await uploadProductImage(compressedFile);
       addImageToList(imageUrl);
       
       setSuccess(`✅ Image uploaded successfully (${stats.reduction}% reduced)`);

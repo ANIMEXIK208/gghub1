@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getSupabaseClient } from '@/utils/supabase/client';
+import { normalizeSupabaseImageUrl } from '@/utils/supabase/storage';
 
 export interface Product {
   id: number;
@@ -40,7 +41,33 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   useEffect(() => {
     fetchProducts();
+    setupRealtimeSubscription();
   }, []);
+
+  const setupRealtimeSubscription = () => {
+    const subscription = supabase
+      .channel('products_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        (payload: any) => {
+          console.log('Product change detected:', payload.eventType);
+          // Refetch products when changes occur
+          fetchProducts();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Real-time product updates enabled');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.warn('⚠️ Real-time subscription error, will retry');
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  };
 
   const fetchProducts = async () => {
     try {
@@ -57,9 +84,13 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (data) {
         const formattedProducts: Product[] = (data as any[]).map(item => {
           // Use image_urls array if available, otherwise fall back to single image_url
-          const imageArray = item.image_urls && item.image_urls.length > 0 
+          const rawImages = item.image_urls && item.image_urls.length > 0 
             ? item.image_urls 
             : (item.image_url ? [item.image_url] : []);
+
+          const imageArray = rawImages
+            .map((url: string) => normalizeSupabaseImageUrl(url, 'product-images'))
+            .filter((url: string | null): url is string => !!url);
 
           return {
             id: item.id,

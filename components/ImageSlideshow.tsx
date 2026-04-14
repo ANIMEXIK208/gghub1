@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { getSafeImageUrl } from '@/utils/supabase/storage';
 
 interface ImageSlideshowProps {
   images: string[];
@@ -11,6 +12,7 @@ interface ImageSlideshowProps {
 
 export default function ImageSlideshow({ images, productName, className = '' }: ImageSlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [loadError, setLoadError] = useState(false);
 
   if (!images || images.length === 0) {
     return (
@@ -21,6 +23,7 @@ export default function ImageSlideshow({ images, productName, className = '' }: 
   }
 
   const currentImage = images[currentIndex];
+  const imageUrl = getSafeImageUrl(currentImage);
   const hasMultiple = images.length > 1;
 
   const goToPrevious = () => {
@@ -34,12 +37,13 @@ export default function ImageSlideshow({ images, productName, className = '' }: 
   return (
     <div className={`relative overflow-hidden bg-slate-800 ${className}`}>
       <Image
-        src={currentImage}
+        src={loadError ? getSafeImageUrl(null) : imageUrl}
         alt={`${productName} - Image ${currentIndex + 1}`}
         width={400}
         height={192}
         className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
         priority={currentIndex === 0}
+        onError={() => setLoadError(true)}
       />
 
       {/* Navigation arrows - only show if multiple images */}

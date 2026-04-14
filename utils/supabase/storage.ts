@@ -5,6 +5,22 @@ type SupabaseBucket = { name: string };
 
 const PRODUCT_IMAGES_BUCKET = 'product-images';
 const ANNOUNCEMENT_IMAGES_BUCKET = 'announcement-images';
+const PROFILE_IMAGES_BUCKET = 'profiles';
+
+const ensureBucketExists = async (bucketName: string): Promise<void> => {
+  const supabase = getSupabaseClient();
+  const { data: existingBuckets, error } = await supabase.storage.listBuckets();
+
+  if (error) {
+    console.warn('Could not list storage buckets:', error);
+    return;
+  }
+
+  const bucketExists = existingBuckets?.some((bucket: SupabaseBucket) => bucket.name === bucketName);
+  if (!bucketExists) {
+    await supabase.storage.createBucket(bucketName, { public: true });
+  }
+};
 
 /**
  * Upload a file to Supabase Storage
@@ -15,6 +31,8 @@ export const uploadFile = async (
   folderPath: string = ''
 ): Promise<string> => {
   const supabase = getSupabaseClient();
+
+  await ensureBucketExists(bucketName);
 
   // Generate unique filename
   const timestamp = new Date().getTime();
@@ -37,9 +55,14 @@ export const uploadFile = async (
     }
 
     // Get public URL
-    const { data: publicData } = supabase.storage
+    const { data: publicData, error: publicError } = supabase.storage
       .from(bucketName)
       .getPublicUrl(filePath);
+
+    if (publicError || !publicData?.publicUrl) {
+      console.error('Public URL error:', publicError);
+      throw publicError || new Error('Failed to get public URL after upload');
+    }
 
     return publicData.publicUrl;
   } catch (error) {
@@ -56,7 +79,7 @@ export const uploadProductImage = async (file: File): Promise<string> => {
     // Compress image first
     const compressedBlob = await compressImage(file, 'PRODUCT');
     const compressedFile = new File([compressedBlob], file.name, { type: 'image/jpeg' });
-    
+
     return uploadFile(compressedFile, PRODUCT_IMAGES_BUCKET, 'products');
   } catch (error) {
     console.error('Error compressing product image:', error);
@@ -91,6 +114,43 @@ export const deleteFile = async (bucketName: string, filePath: string): Promise<
     console.error('Error deleting file:', error);
     throw error;
   }
+};
+
+export const normalizeSupabaseImageUrl = (rawUrl?: string | null, fallbackBucket?: string): string | null => {
+  if (!rawUrl) {
+    return null;
+  }
+
+  const trimmed = rawUrl.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+  if (!supabaseUrl) {
+    return trimmed;
+  }
+
+  const cleaned = trimmed.replace(/^\/+/, '');
+
+  if (cleaned.startsWith('storage/v1/object/public/')) {
+    return `${supabaseUrl}/${cleaned}`;
+  }
+
+  if (fallbackBucket && !cleaned.startsWith(`${fallbackBucket}/`)) {
+    return `${supabaseUrl}/storage/v1/object/public/${fallbackBucket}/${cleaned}`;
+  }
+
+  return `${supabaseUrl}/storage/v1/object/public/${cleaned}`;
+};
+
+export const getSafeImageUrl = (rawUrl?: string | null, fallbackBucket?: string): string => {
+  const normalized = normalizeSupabaseImageUrl(rawUrl, fallbackBucket);
+  return normalized || 'https://via.placeholder.com/400x320?text=Image+Not+Found';
 };
 
 /**
